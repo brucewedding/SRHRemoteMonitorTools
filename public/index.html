@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Heart Monitor Dashboard</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        [data-theme="dark"] .btn-primary,
+        [data-theme="light"] .btn-primary {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            border-color: #3b82f6 !important;
+        }
+        [data-theme="dark"] .btn-primary:hover,
+        [data-theme="light"] .btn-primary:hover {
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script src="components.js"></script>
+    <script src="combined.js"></script>
+</body>
+</html>
