@@ -1,7 +1,7 @@
 // Card components for the dashboard
 function createCard(label, value, color) {
     return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
-      React.createElement('div', { className: 'card-body p-0.5' },
+      React.createElement('div', { className: 'card-body py-1 px-2' },
         React.createElement('h3', { className: 'card-title text-sm sm:text-base opacity-80' }, label),
         React.createElement('div', { className: `text-lg sm:text-xl font-bold text-${color}-500` }, value)
       )
@@ -96,7 +96,7 @@ function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFi
 
 function createSensorStatusCard(label, isActive) {
     return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
-      React.createElement('div', { className: 'card-body p-0.5' },
+      React.createElement('div', { className: 'card-body p-1' },
         React.createElement('div', { className: 'flex items-center justify-between' },
           React.createElement('h3', { className: 'text-sm sm:text-base' }, label),
           React.createElement('div', { className: `badge ${isActive ? 'badge-success' : 'badge-neutral'} gap-2` },
@@ -170,7 +170,7 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
         )
       ),
       React.createElement('button', {
-        className: 'btn btn-primary sm:w-[200px] w-auto mx-auto',
+        className: 'btn btn-primary sm:w-[200px] w-auto mx-auto shadow-lg',
         onClick: () => {
             console.log('Button clicked');
             if (typeof onToggleView === 'function') {

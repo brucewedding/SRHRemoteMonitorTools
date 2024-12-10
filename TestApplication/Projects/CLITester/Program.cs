@@ -1,6 +1,7 @@
 ﻿namespace CLITester
 {
     using System;
+    using System.Diagnostics;
     using System.Net.WebSockets;
     using System.Text.Json;
     using WebSocketSharp;
@@ -32,17 +33,25 @@
                         ws.Connect();
                         Console.WriteLine("Connected to WebSocket server");
 
+                        var stopwatch = Stopwatch.StartNew();
+                        var timeLimit = TimeSpan.FromHours(3);
+
                         while (isRunning && ws.ReadyState == WebSocketState.Open)
                         {
                             try
                             {
+                                if (stopwatch.Elapsed >= timeLimit)
+                                {
+                                    break;
+                                }
+
                                 SendMonitorData();
-                                Thread.Sleep(1000); // 1 second delay
+                                Thread.Sleep(1500);
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine($"Error sending data: {ex.Message}");
-                                break; // Break inner loop to trigger reconnection
+                                break;
                             }
                         }
                     }

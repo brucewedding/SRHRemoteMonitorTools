@@ -383,14 +383,14 @@ function CombinedDashboard() {
         //console.log('Rendering dashboard view');
         return React.createElement('div', null,
             // Status Cards
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mt-2 mb-2' },
-                React.createElement('div', { className: 'card-body' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'System Status'),
+            React.createElement('div', { className: 'card bg-base-200 shadow-xl mt-1 mb-1 p-0' },
+                React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
+                    React.createElement('h2', { className: 'card-title opacity-80 mt-0  py-0' }, 'System Status'),
                     React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 gap-4' },
                         createCard('Heart Rate', `${detailedData.HeartRate} BPM`, 'red'),
                         createCard('Operation State', detailedData.OperationState, 'blue'),
                         createCard('Heart Status', detailedData.HeartStatus, 'green'),
-                        React.createElement('div', { className: 'grid grid-rows-2 gap-2' },
+                        React.createElement('div', { className: 'grid grid-rows-2 gap-2 p-1' },
                             createSensorStatusCard('Medical Sensors', detailedData.UseMedicalSensor),
                             createSensorStatusCard('Internal Sensors', detailedData.UseInternalSensor)
                         )
@@ -399,7 +399,7 @@ function CombinedDashboard() {
             ),
             // Left Heart Data
             React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body' },
+                React.createElement('div', { className: 'card-body py-0.5 px-1.5' },
                     React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
                     React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
                         createDetailCard('Stroke Vol', `${detailedData.LeftHeart.StrokeVolume.toFixed(1)} ml`, 'stroke.png'),
@@ -412,7 +412,7 @@ function CombinedDashboard() {
             ),
             // Right Heart Data
             React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body' },
+                React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
                     React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
                     React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
                         createDetailCard('Stroke Vol', `${detailedData.RightHeart.StrokeVolume.toFixed(1)} ml`, 'stroke.png'),
@@ -425,8 +425,8 @@ function CombinedDashboard() {
             ),
             // Pressure Data
             React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'Pressures'),
+                React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
+                    React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
                     React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' },
                         createDetailCard('CVP', `${detailedData.pressures.cvp.toFixed(1)} mmHg`, 'pressure.png'),
                         createDetailCard('PAP', `${detailedData.pressures.pap.toFixed(1)} mmHg`, 'pressure.png'),
@@ -437,7 +437,7 @@ function CombinedDashboard() {
             ),
             // Flow Info
             React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body' },
+                React.createElement('div', { className: 'card-body py-0.5 px-1.5' },
                     React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
                         createDetailCard('Flow Lmt', `${detailedData.FlowLimit.toFixed(2)}`, 'flow.png'),
                         createDetailCard('Flow State', detailedData.FlowLimitState, 'flow.png')
@@ -528,4 +528,3 @@ function CombinedDashboard() {
 ReactDOM.render(
     React.createElement(CombinedDashboard),
     document.getElementById('root')
-);
