@@ -12,12 +12,20 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
     // Special case for Flow State - move value to description and set value based on state
     if (label === 'Flow State') {
         let stateValue = '';
-        if (value.includes('increasing')) {
+        let stateDesc = '';
+        
+        // Ensure value is treated as a string
+        const valueStr = String(value);
+        
+        if (valueStr.includes('increasing')) {
             stateValue = 'Inc';
-        } else if (value.includes('decreasing')) {
+            stateDesc = 'Flow Increasing';
+        } else if (valueStr.includes('decreasing')) {
             stateValue = 'Dec';
+            stateDesc = 'Flow Decreasing';
         } else {
             stateValue = 'Cons';
+            stateDesc = 'Flow Constant';
         }
 
         return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4' },
@@ -25,7 +33,7 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
                 React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
                     React.createElement('div', { className: 'stat-title opacity-70' }, label),
                     React.createElement('div', { className: `stat-value text-${color}` }, stateValue),
-                    React.createElement('div', { className: 'stat-desc opacity-70' }, value)
+                    React.createElement('div', { className: 'stat-desc opacity-70' }, stateDesc)
                 ),
                 React.createElement('div', { className: 'flex-shrink-0' },
                     React.createElement('img', {
@@ -38,49 +46,116 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
         );
     }
 
-    // Extract numeric value and units if present
-    const match = String(value).match(/^([\d.]+)(\s*L\/min|\s*\w+)?$/);
-    const numericValue = match ? match[1] : value;
-    // If the unit is L/min, always show it in description, otherwise use the matched unit
-    const units = match && match[2] ? 
-        (match[2].includes('L/min') ? 'L/min' : match[2].trim()) : 
-        '';
+    // Extract display value and units
+    let displayValue = '';
+    let units = '';
 
-    return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4 relative' },
-        React.createElement('div', { className: 'flex justify-between items-start' },
-            React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
-                React.createElement('div', { className: 'stat-title opacity-70' }, label),
-                React.createElement('div', { className: `stat-value text-${color}` }, numericValue),
-                units && React.createElement('div', { className: 'stat-desc opacity-70' }, units)
-            ),
-            React.createElement('div', { className: 'flex-shrink-0' },
-                React.createElement('img', {
-                    src: iconFile,
-                    className: 'h-8 w-8',
-                    alt: ''
-                })
-            )
-        ),
+    // If value is an object with PrimaryValue, use that
+    if (value && typeof value === 'object' && 'PrimaryValue' in value) {
+        displayValue = value.PrimaryValue;
+    } else if (typeof value === 'string') {
+        // If value is a string, try to extract units
+        const match = value.match(/^([\d.]+)(\s*L\/min|\s*\w+)?$/);
+        if (match) {
+            displayValue = match[1];
+            units = match[2] ? 
+                (match[2].includes('L/min') ? 'L/min' : match[2].trim()) : 
+                '';
+        } else {
+            displayValue = value;
+        }
+    } else {
+        displayValue = String(value);
+    }
+
+    // Determine badge state based on BackColor if value is an object
+    let badgeState = 'badge-success'; // default state
+    let badgeText = 'OK'; // default text
+    let showBadge = false;
+
+    if (value && typeof value === 'object' && 'PrimaryValue' in value) {
+        showBadge = true;
+
+        if (value.BackColor) {
+            // Extract the color, handling both RGB and ARGB formats, prioritizing 8-char match
+            const colorMatch = value.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
+            if (colorMatch) {
+                const colorCode = colorMatch[1].toUpperCase();
+                // For ARGB format (8 chars), remove the alpha channel (first 2 chars)
+                const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
+                if (mainColor === 'FFFF00') {
+                    badgeState = 'badge-warning';
+                    badgeText = 'Warn';
+                } else if (mainColor === 'FF0000') {
+                    badgeState = 'badge-error';
+                    badgeText = 'Alarm';
+                }
+            }
+        }
+    }
+
+    const mainContent = React.createElement('div', { 
+        key: 'content',
+        className: 'flex justify-between items-start' 
+    }, [
         React.createElement('div', { 
-            className: 'absolute bottom-2 right-2'
-        }, 
+            key: 'text-content',
+            className: 'flex-1 min-w-0 pr-4' 
+        }, [
             React.createElement('div', { 
-                className: 'badge badge-info badge-success'
-            }, 'OK')
+                key: 'title',
+                className: 'stat-title opacity-70' 
+            }, label),
+            React.createElement('div', { 
+                key: 'value',
+                className: `stat-value text-${color}` 
+            }, displayValue),
+            units && React.createElement('div', { 
+                key: 'units',
+                className: 'stat-desc opacity-70' 
+            }, units)
+        ].filter(Boolean)),
+        React.createElement('div', { 
+            key: 'icon',
+            className: 'flex-shrink-0' 
+        },
+            React.createElement('img', {
+                src: iconFile,
+                className: 'h-8 w-8',
+                alt: ''
+            })
         )
-    );
+    ]);
+
+    const badge = showBadge && React.createElement('div', { 
+        key: 'badge',
+        className: `absolute bottom-2 right-2 badge ${badgeState}`
+    }, badgeText);
+
+    return React.createElement('div', { 
+        className: 'stat bg-base-300 shadow-xl rounded-xl p-4 relative'
+    }, [mainContent, badge].filter(Boolean));
 }
 
 function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFile = 'heart.png') {
+    // Extract display value if avgPressure is an object with PrimaryValue
+    const displayValue = avgPressure && typeof avgPressure === 'object' && 'PrimaryValue' in avgPressure 
+        ? avgPressure.PrimaryValue 
+        : avgPressure;
+
+    // Round max and min pressure values to 1 decimal place
+    const formattedMax = Number(maxPressure).toFixed(1);
+    const formattedMin = Number(minPressure).toFixed(1);
+
     return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4' },
         React.createElement('div', { className: 'flex justify-between items-start' },
             React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
                 React.createElement('div', { className: 'stat-title opacity-70' }, label),
                 React.createElement('div', { className: 'stat-value text-base-content' }, 
-                    avgPressure.toFixed(1)
+                    displayValue
                 ),
                 React.createElement('div', { className: 'stat-desc opacity-70' }, 
-                    `${maxPressure.toFixed(1)}/${minPressure.toFixed(1)} mmHg`
+                    `${formattedMax}/${formattedMin} mmHg`
                 )
             ),
             React.createElement('div', { className: 'flex-shrink-0' },
@@ -172,7 +247,6 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
       React.createElement('button', {
         className: 'btn btn-primary sm:w-[200px] w-auto mx-auto shadow-lg',
         onClick: () => {
-            console.log('Button clicked');
             if (typeof onToggleView === 'function') {
                 onToggleView();
             }
