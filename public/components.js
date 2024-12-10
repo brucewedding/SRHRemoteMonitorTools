@@ -68,13 +68,13 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
         displayValue = String(value);
     }
 
-    // Determine badge state based on BackColor if value is an object
-    let badgeState = 'badge-success'; // default state
-    let badgeText = 'OK'; // default text
-    let showBadge = false;
+    // Determine indicator state based on BackColor if value is an object
+    let indicatorColor = 'bg-success text-success-content'; // default state
+    let indicatorText = 'OK'; // default text
+    let showIndicator = false;
 
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
-        showBadge = true;
+        showIndicator = true;
 
         if (value.BackColor) {
             // Extract the color, handling both RGB and ARGB formats, prioritizing 8-char match
@@ -84,11 +84,11 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
                 // For ARGB format (8 chars), remove the alpha channel (first 2 chars)
                 const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
                 if (mainColor === 'FFFF00') {
-                    badgeState = 'badge-warning';
-                    badgeText = 'Warn';
+                    indicatorColor = 'bg-warning text-warning-content';
+                    indicatorText = 'OR';
                 } else if (mainColor === 'FF0000') {
-                    badgeState = 'badge-error';
-                    badgeText = 'Alarm';
+                    indicatorColor = 'bg-error text-error-content';
+                    indicatorText = 'OR';
                 }
             }
         }
@@ -127,14 +127,15 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
         )
     ]);
 
-    const badge = showBadge && React.createElement('div', { 
-        key: 'badge',
-        className: `absolute bottom-2 right-2 badge ${badgeState}`
-    }, badgeText);
+    const indicator = showIndicator && React.createElement('div', { 
+        key: 'indicator',
+        className: `indicator-item indicator-top indicator-end badge badge-sm ${indicatorColor}`,
+        style: { top: '0.5rem', right: '0.5rem' }
+    }, indicatorText);
 
     return React.createElement('div', { 
-        className: 'stat bg-base-300 shadow-xl rounded-xl p-4 relative'
-    }, [mainContent, badge].filter(Boolean));
+        className: 'stat bg-base-300 shadow-xl rounded-xl p-4 relative indicator'
+    }, [mainContent, indicator].filter(Boolean));
 }
 
 function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFile = 'heart.png') {
@@ -270,7 +271,7 @@ function createFooter() {
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 className: 'link link-hover'
-            }, 'Copyright 2024 Scandinavian Real Heart AB')
+            }, 'Copyright © 2024 Scandinavian Real Heart AB')
         )
     );
 }
