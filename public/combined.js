@@ -95,7 +95,7 @@ function ThemeToggle({ theme, onToggle }) {
 function CombinedDashboard() {
     //console.log('CombinedDashboard rendering');
     const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' or 'charts'
-    const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
+    const [theme, setTheme] = useState('light'); // Changed from 'dark' to 'light'
     const [detailedData, setDetailedData] = useState({
         LeftHeart: { StrokeVolume: 0, PowerConsumption: 0, IntPressure: 0, IntPressureMin: 0, IntPressureMax: 0, AtrialPressure: 0, CardiacOutput: 0 },
         RightHeart: { StrokeVolume: 0, PowerConsumption: 0, IntPressure: 0, IntPressureMin: 0, IntPressureMax: 0, AtrialPressure: 0, CardiacOutput: 0 },
@@ -528,3 +528,4 @@ function CombinedDashboard() {
 ReactDOM.render(
     React.createElement(CombinedDashboard),
     document.getElementById('root')
+);
