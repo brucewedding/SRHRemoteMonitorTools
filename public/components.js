@@ -259,3 +259,18 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
       })
     );
 }
+
+function createFooter() {
+    return React.createElement('footer', {
+        className: 'footer footer-center p-4 bg-base-300 text-base-content fixed bottom-0 left-0 right-0'
+    },
+        React.createElement('aside', null,
+            React.createElement('a', {
+                href: 'https://realheart.se',
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                className: 'link link-hover'
+            }, 'Copyright 2024 Scandinavian Real Heart AB')
+        )
+    );
+}

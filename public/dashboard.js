@@ -43,10 +43,30 @@ function CombinedDashboard() {
         FlowLimit: '0',
         UseMedicalSensor: false,
         UseInternalSensor: true,
-        CVPSensor: '0',
-        PAPSensor: '0',
-        AoPSensor: '0',
-        ArtPressSensor: '0'
+        CVPSensor: {
+            Name: '',
+            PrimaryValue: '0',
+            SecondaryValue: null,
+            BackColor: null
+        },
+        PAPSensor: {
+            Name: '',
+            PrimaryValue: '0',
+            SecondaryValue: null,
+            BackColor: null
+        },
+        AoPSensor: {
+            Name: '',
+            PrimaryValue: '0',
+            SecondaryValue: null,
+            BackColor: null
+        },
+        ArtPressSensor: {
+            Name: '',
+            PrimaryValue: '0',
+            SecondaryValue: null,
+            BackColor: null
+        }
     });
     const [lastUpdate, setLastUpdate] = React.useState(null);
     const [status, setStatus] = React.useState('Connecting...');
@@ -79,10 +99,30 @@ function CombinedDashboard() {
                 FlowLimit: extractValue(data.FlowLimit),
                 UseMedicalSensor: data.UseMedicalSensor,
                 UseInternalSensor: !data.UseMedicalSensor,
-                CVPSensor: data.CVPSensor || '0',
-                PAPSensor: data.PAPSensor || '0',
-                AoPSensor: data.AoPSensor || '0',
-                ArtPressSensor: data.ArtPressSensor || '0',
+                CVPSensor: data.CVPSensor || {
+                    Name: '',
+                    PrimaryValue: '0',
+                    SecondaryValue: null,
+                    BackColor: null
+                },
+                PAPSensor: data.PAPSensor || {
+                    Name: '',
+                    PrimaryValue: '0',
+                    SecondaryValue: null,
+                    BackColor: null
+                },
+                AoPSensor: data.AoPSensor || {
+                    Name: '',
+                    PrimaryValue: '0',
+                    SecondaryValue: null,
+                    BackColor: null
+                },
+                ArtPressSensor: data.ArtPressSensor || {
+                    Name: '',
+                    PrimaryValue: '0',
+                    SecondaryValue: null,
+                    BackColor: null
+                },
                 LeftHeart: {
                     StrokeVolume: data.LeftHeart?.StrokeVolume || '0',
                     PowerConsumption: data.LeftHeart?.PowerConsumption || '0',
@@ -270,7 +310,10 @@ function CombinedDashboard() {
                 onToggle: handleThemeToggle
             })
         ),
-        viewMode === 'dashboard' ? renderDashboard() : renderCharts()
+        React.createElement('div', { className: 'pb-16' }, // Add padding at the bottom to prevent content from being hidden behind the footer
+            viewMode === 'dashboard' ? renderDashboard() : renderCharts()
+        ),
+        createFooter()
     );
 }
 
