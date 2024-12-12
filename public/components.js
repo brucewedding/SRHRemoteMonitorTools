@@ -96,7 +96,7 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
 
     // Determine background color based on BackColor if value is an object
     let cardBgColor = 'bg-base-300'; // default background
-    if (value && typeof value === 'object' && 'BackColor' in value) {
+    if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
         const colorMatch = value.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
         if (colorMatch) {
             const colorCode = colorMatch[1].toUpperCase();
