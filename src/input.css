@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .border-red-500 {
+        border-color: rgb(239 68 68);
+    }
+    .border-yellow-500 {
+        border-color: rgb(234 179 8);
+    }
+}
+
 /* Custom styles from the original HTML */
 [data-theme="dark"] .btn-primary,
 [data-theme="light"] .btn-primary {
