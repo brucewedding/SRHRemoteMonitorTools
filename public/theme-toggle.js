@@ -3,7 +3,7 @@ function ThemeToggle({ theme, onToggle }) {
     return React.createElement('label', { className: 'swap swap-rotate ml-4' },
         React.createElement('input', {
             type: 'checkbox',
-            checked: theme === 'business',
+            checked: theme === 'dark',
             onChange: onToggle
         }),
         // Sun icon

@@ -4,7 +4,7 @@ import { ChartManager } from './chart-manager.js';
 
 function CombinedDashboard() {
     const [viewMode, setViewMode] = React.useState('dashboard');
-    const [theme, setTheme] = React.useState('emerald');
+    const [theme, setTheme] = React.useState('light');
     const [isChatOpen, setIsChatOpen] = React.useState(false);
     const [messages, setMessages] = React.useState([]);
     const wsRef = React.useRef(null);
@@ -384,7 +384,7 @@ function CombinedDashboard() {
     };
 
     const handleThemeToggle = () => {
-        setTheme(theme === 'business' ? 'emerald' : 'business');
+        setTheme(theme === 'dark' ? 'light' : 'dark');
     };
 
     return React.createElement('div', { className: 'container mx-auto p-4 max-w-7xl' },
