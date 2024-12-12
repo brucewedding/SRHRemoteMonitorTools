@@ -95,16 +95,16 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
     }
 
     // Determine background color based on BackColor if value is an object
-    let cardBgColor = 'bg-base-300'; // default background
+    let cardBgColor = 'bg-base-300 border border-base-300'; // default background and border
     if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
         const colorMatch = value.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
         if (colorMatch) {
             const colorCode = colorMatch[1].toUpperCase();
             const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
             if (mainColor === 'FFFF00') {
-                cardBgColor = 'bg-warning bg-opacity-30 text-black';
+                cardBgColor = 'border-warning border-4';
             } else if (mainColor === 'FF0000') {
-                cardBgColor = 'bg-error bg-opacity-30 text-black';
+                cardBgColor = 'border-error border-4';
             }
         }
     }
