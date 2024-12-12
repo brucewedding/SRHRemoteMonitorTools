@@ -102,9 +102,9 @@ function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-co
             const colorCode = colorMatch[1].toUpperCase();
             const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
             if (mainColor === 'FFFF00') {
-                cardBgColor = 'border-warning border-4';
+                cardBgColor = 'border-yellow-500 border-4';
             } else if (mainColor === 'FF0000') {
-                cardBgColor = 'border-error border-4';
+                cardBgColor = 'border-red-500 border-4';
             }
         }
     }
