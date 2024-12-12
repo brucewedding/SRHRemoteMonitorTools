@@ -8,7 +8,7 @@ function createCard(label, value, color) {
     );
 }
 
-function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-content') {
+function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-content', detailedData = null) {
     // Special case for Flow State - move value to description and set value based on state
     if (label === 'Flow State') {
         let stateValue = '';
