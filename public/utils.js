@@ -1,6 +1,6 @@
 // Chart configuration helper function
 function createChartConfig(label, color, minY, maxY, datasets, data, theme) {
-    const isDark = theme === 'dark';
+    const isDark = theme === 'business';
     return {
         type: 'line',
         data: {

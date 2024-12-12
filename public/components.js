@@ -172,10 +172,10 @@ function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFi
 
 function createSensorStatusCard(label, isActive) {
     return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
-      React.createElement('div', { className: 'card-body p-1' },
+      React.createElement('div', { className: 'card-body py-1 px-2' },
         React.createElement('div', { className: 'flex items-center justify-between' },
           React.createElement('h3', { className: 'text-sm sm:text-base' }, label),
-          React.createElement('div', { className: `badge ${isActive ? 'badge-success' : 'badge-neutral'} gap-2` },
+          React.createElement('div', { className: `badge ${isActive ? 'badge-success' : 'badge-ghost'} gap-2` },
             isActive ? 'Active' : 'Inactive'
           )
         )
@@ -254,7 +254,7 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
         }
       }, isDetailedView ? 'Show Details' : 'Show Charts'),
       React.createElement('img', {
-        src: theme === 'light' ? '/logo-light-mode.png' : '/logo.png',
+        src: theme === 'emerald' ? '/logo-light-mode.png' : '/logo.png',
         alt: 'Scandinavian Real Heart AB',
         className: 'h-8 ml-4 mr-4'
       })
