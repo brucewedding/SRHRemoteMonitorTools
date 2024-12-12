@@ -16,7 +16,8 @@ app.use(cookieParser());
 // Secret key for HMAC - this should match the key in the C# program
 const secretKey = 'SRHMonitorSecretKey2024';
 
-// Main admin password hash (HMAC of 'admin123')
+// Main admin credentials
+const adminUsername = 'admin';
 const hashedPassword = 'a9698e619ff9ba20a5e9c8005bc247d85cc60b7e38c4d9bee21baa254ac101b3';
 
 // File to store one-time password hashes
@@ -52,16 +53,17 @@ function writeOneTimePasswords(passwords) {
 }
 
 app.post('/login', (req, res) => {
-    const password = req.body.password;
+    const { username, password } = req.body;
     const passwordHash = createHash(password);
     
-    // Check main password
-    if (passwordHash === hashedPassword) {
-        res.cookie('auth', password, { httpOnly: true });
+    // Check main admin credentials
+    if (username === adminUsername && passwordHash === hashedPassword) {
+        // Set auth cookie with both username and password
+        res.cookie('auth', JSON.stringify({ username, password }), { httpOnly: true });
         return res.sendStatus(200);
     }
     
-    // Check one-time passwords
+    // Check one-time passwords (these will use the provided username)
     const oneTimePasswords = readOneTimePasswords();
     const oneTimeIndex = oneTimePasswords.findIndex(hash => hash === passwordHash);
     
@@ -70,12 +72,12 @@ app.post('/login', (req, res) => {
         oneTimePasswords.splice(oneTimeIndex, 1);
         writeOneTimePasswords(oneTimePasswords);
         
-        // Set auth cookie
-        res.cookie('auth', password, { httpOnly: true });
+        // Set auth cookie with both username and password
+        res.cookie('auth', JSON.stringify({ username, password }), { httpOnly: true });
         return res.sendStatus(200);
     }
     
-    // No valid password found
+    // No valid credentials found
     res.sendStatus(401);
 });
 
@@ -90,42 +92,115 @@ app.use((req, res, next) => {
         return res.redirect('/login.html');
     }
     
-    const authHash = createHash(auth);
-    
-    // Check main password
-    if (authHash === hashedPassword) {
-        return next();
+    try {
+        const { username, password } = JSON.parse(auth);
+        const authHash = createHash(password);
+        
+        // Check main admin credentials
+        if (username === adminUsername && authHash === hashedPassword) {
+            return next();
+        }
+        
+        // Check one-time passwords
+        const oneTimePasswords = readOneTimePasswords();
+        if (oneTimePasswords.some(hash => hash === authHash)) {
+            return next();
+        }
+    } catch (err) {
+        console.error('Auth cookie parsing error:', err);
     }
     
-    // Check one-time passwords
-    const oneTimePasswords = readOneTimePasswords();
-    if (oneTimePasswords.some(hash => hash === authHash)) {
-        return next();
-    }
-    
-    // No valid password found
+    // No valid credentials found
     res.redirect('/login.html');
 });
 
 app.use(express.static('public'));
 
+// Store WebSocket to username mapping
+const wsClients = new Map();
+
 // WebSocket connection handling
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
     console.log('New client connected');
 
-    ws.on('message', (data) => {
-        console.log('Received:', data.toString());
-        
-        // Broadcast to all connected clients
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === ws.OPEN) {
-                client.send(data.toString());
+    // Extract username from cookie
+    const cookies = req.headers.cookie;
+    if (cookies) {
+        const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='));
+        if (authCookie) {
+            try {
+                const authData = JSON.parse(decodeURIComponent(authCookie.split('=')[1]));
+                wsClients.set(ws, authData.username);
+            } catch (err) {
+                console.error('Error parsing auth cookie:', err);
             }
-        });
+        }
+    }
+
+    ws.on('message', (data) => {
+        console.log('Raw message received:', data);  // Add this line
+
+        try {
+            const message = JSON.parse(data.toString());
+            console.log('Just Received:', message);  // Use comma instead of +
+            console.log('Username:', wsClients.get(ws) || 'Unknown User');  // Use comma instead of +
+            console.log('Timestamp:', new Date().toISOString());  // Use comma instead of +
+            // Handle device messages differently from data updates
+            if (message.type === 'deviceMessage') {
+                // Create formatted message with username and timestamp
+                const broadcastMessage = {
+                    type: 'deviceMessage',
+                    timestamp: new Date().toISOString(),
+                    username: wsClients.get(ws) || 'Unknown User',
+                    message: message.message
+                };
+                
+                const broadcastString = JSON.stringify(broadcastMessage);
+                
+                // Send to ALL clients INCLUDING the sender
+                wss.clients.forEach((client) => {
+                    if (client.readyState === ws.OPEN) {
+                        client.send(broadcastString);
+                    }
+                });
+            } else {
+                // Handle regular data updates (broadcast to other clients only)
+                wss.clients.forEach((client) => {
+                    if (client !== ws && client.readyState === ws.OPEN) {
+                        client.send(data.toString());
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error processing message:', error);
+            // Don't forward raw messages on parse error
+            // Instead, try to handle it as a device message if possible
+            try {
+                const username = wsClients.get(ws) || 'Unknown User';
+                const broadcastMessage = {
+                    type: 'deviceMessage',
+                    timestamp: new Date().toISOString(),
+                    username: username,
+                    message: data.toString()
+                };
+                
+                const broadcastString = JSON.stringify(broadcastMessage);
+                
+                // Send to ALL clients INCLUDING the sender
+                wss.clients.forEach((client) => {
+                    if (client.readyState === ws.OPEN) {
+                        client.send(broadcastString);
+                    }
+                });
+            } catch (innerError) {
+                console.error('Error broadcasting message:', innerError);
+            }
+        }
     });
 
     ws.on('close', () => {
         console.log('Client disconnected');
+        wsClients.delete(ws);
     });
 });
 

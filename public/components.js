@@ -232,7 +232,60 @@ function createChartCard(title, value, color, chartId) {
     );
 }
 
-function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
+function createChatModal(isOpen, onClose, onSend, messages = []) {
+    if (!isOpen) return null;
+
+    return React.createElement('div', { className: 'modal modal-open' },
+        React.createElement('div', { className: 'modal-box relative max-w-2xl' },
+            React.createElement('h3', { className: 'font-bold text-lg mb-4' }, 'Send Message to Device'),
+            React.createElement('button', {
+                className: 'btn btn-sm btn-circle absolute right-2 top-2',
+                onClick: onClose
+            }, '✕'),
+            // Messages display area
+            React.createElement('div', {
+                className: 'mb-4 h-48 overflow-y-auto bg-base-200 rounded-lg p-3',
+                id: 'messagesContainer'
+            },
+                messages.map((msg, index) => 
+                    React.createElement('div', {
+                        key: index,
+                        className: 'chat chat-start mb-2'
+                    },
+                        React.createElement('div', { className: 'chat-header opacity-70 text-sm' },
+                            msg.username,
+                            React.createElement('time', { className: 'ml-2' },
+                                new Date(msg.timestamp).toLocaleTimeString()
+                            )
+                        ),
+                        React.createElement('div', { className: 'chat-bubble' }, msg.message)
+                    )
+                )
+            ),
+            React.createElement('div', { className: 'form-control' },
+                React.createElement('textarea', {
+                    className: 'textarea textarea-bordered h-24',
+                    placeholder: 'Type your message here...',
+                    id: 'messageInput'
+                })
+            ),
+            React.createElement('div', { className: 'modal-action' },
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    onClick: () => {
+                        const message = document.getElementById('messageInput').value;
+                        if (message.trim()) {
+                            onSend(message);
+                            document.getElementById('messageInput').value = '';
+                        }
+                    }
+                }, 'Send Message')
+            )
+        )
+    );
+}
+
+function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat) {
     return React.createElement('div', { className: 'flex flex-wrap justify-between items-center mb-4 gap-2' },
       React.createElement('div', null,
         React.createElement('h2', { className: 'text-lg font-bold flex items-center gap-2' },
@@ -245,14 +298,20 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme) {
           `Last update: ${lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}`
         )
       ),
-      React.createElement('button', {
-        className: 'btn btn-primary sm:w-[200px] w-auto mx-auto shadow-lg',
-        onClick: () => {
-            if (typeof onToggleView === 'function') {
-                onToggleView();
+      React.createElement('div', { className: 'flex gap-2' },
+        React.createElement('button', {
+            className: 'btn btn-primary sm:w-[200px] w-auto mx-auto shadow-lg',
+            onClick: () => {
+                if (typeof onToggleView === 'function') {
+                    onToggleView();
+                }
             }
-        }
-      }, isDetailedView ? 'Show Details' : 'Show Charts'),
+        }, isDetailedView ? 'Show Details' : 'Show Charts'),
+        React.createElement('button', {
+            className: 'btn btn-secondary sm:w-[200px] w-auto mx-auto shadow-lg',
+            onClick: onOpenChat
+        }, 'Send Message')
+      ),
       React.createElement('img', {
         src: theme === 'emerald' ? '/logo-light-mode.png' : '/logo.png',
         alt: 'Scandinavian Real Heart AB',

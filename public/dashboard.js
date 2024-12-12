@@ -5,6 +5,9 @@ import { ChartManager } from './chart-manager.js';
 function CombinedDashboard() {
     const [viewMode, setViewMode] = React.useState('dashboard');
     const [theme, setTheme] = React.useState('emerald');
+    const [isChatOpen, setIsChatOpen] = React.useState(false);
+    const [messages, setMessages] = React.useState([]);
+    const wsRef = React.useRef(null);
     const [detailedData, setDetailedData] = React.useState({
         StatusData: {
             ExtLeft: { Text: '-', Color: 'badge-info' },
@@ -94,10 +97,24 @@ function CombinedDashboard() {
 
     React.useEffect(() => {
         const ws = new WebSocket('ws://' + window.location.hostname);
+        wsRef.current = ws;
+        
         ws.onopen = () => setStatus('Connected');
         ws.onclose = () => setStatus('Disconnected');
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+            
+            // Handle device messages
+            if (data.type === 'deviceMessage') {
+                setMessages(prevMessages => [...prevMessages, {
+                    username: data.username,
+                    message: data.message,
+                    timestamp: data.timestamp
+                }]);
+                return;
+            }
+            
+            // Handle regular data updates
             setLastUpdate(new Date());
             
             // Process the data to extract PrimaryValue from any objects
@@ -187,6 +204,25 @@ function CombinedDashboard() {
             chartManager.current.updateCharts();
         }
     }, [dataUpdateRef.current, viewMode]);
+
+    // Auto-scroll messages when new ones arrive
+    React.useEffect(() => {
+        if (isChatOpen) {
+            const container = document.getElementById('messagesContainer');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+    }, [messages, isChatOpen]);
+
+    const handleSendMessage = (message) => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'deviceMessage',
+                message: message
+            }));
+        }
+    };
 
     function renderDashboard() {
         return React.createElement('div', null,
@@ -354,7 +390,7 @@ function CombinedDashboard() {
     return React.createElement('div', { className: 'container mx-auto p-4 max-w-7xl' },
         React.createElement('div', { className: 'flex items-center justify-between mb-4' },
             React.createElement('div', { className: 'flex-1' },
-                createHeader(status, lastUpdate, viewMode === 'charts', handleViewToggle, theme)
+                createHeader(status, lastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true))
             ),
             React.createElement(ThemeToggle, {
                 theme: theme,
@@ -364,6 +400,7 @@ function CombinedDashboard() {
         React.createElement('div', { className: 'pb-16' }, // Add padding at the bottom to prevent content from being hidden behind the footer
             viewMode === 'dashboard' ? renderDashboard() : renderCharts()
         ),
+        createChatModal(isChatOpen, () => setIsChatOpen(false), handleSendMessage, messages),
         createFooter()
     );
 }
