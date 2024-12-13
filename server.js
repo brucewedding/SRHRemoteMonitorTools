@@ -114,6 +114,9 @@ app.use((req, res, next) => {
     res.redirect('/login.html');
 });
 
+// Serve static files from dist directory first (production build)
+app.use(express.static('dist'));
+// Then fallback to public directory for any files not in dist
 app.use(express.static('public'));
 
 // Store WebSocket to username mapping
