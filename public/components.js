@@ -333,7 +333,7 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, o
       ),
       React.createElement('div', { className: 'flex gap-2' },
         React.createElement('button', {
-            className: 'btn btn-primary sm:w-[200px] w-auto mx-auto shadow-lg',
+            className: 'btn btn-primary w-[120px] sm:w-[200px] px-2 sm:px-4 text-sm sm:text-base shadow-lg',
             onClick: () => {
                 if (typeof onToggleView === 'function') {
                     onToggleView();
@@ -341,12 +341,12 @@ function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, o
             }
         }, isDetailedView ? 'Show Details' : 'Show Charts'),
         React.createElement('button', {
-            className: 'btn btn-secondary sm:w-[200px] w-auto mx-auto shadow-lg',
+            className: 'btn btn-secondary w-[120px] sm:w-[200px] px-2 sm:px-4 text-sm sm:text-base shadow-lg',
             onClick: onOpenChat
         }, 'Send Message')
       ),
       React.createElement('img', {
-        src: theme === 'emerald' ? '/logo-light-mode.png' : '/logo.png',
+        src: theme === 'light' ? '/logo-light-mode.png' : '/logo.png',
         alt: 'Scandinavian Real Heart AB',
         className: 'h-8 ml-4 mr-4'
       })
