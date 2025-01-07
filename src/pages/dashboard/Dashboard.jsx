@@ -13,6 +13,20 @@ import {
     createFooter 
 } from '../../components/Components';
 
+import { UserButton, useUser } from '@clerk/clerk-react';
+
+function Dashboard() {
+  const { user } = useUser();
+  
+  return (
+    <div>
+      <UserButton /> {/* Adds the user menu button */}
+      {CombinedDashboard()}
+    </div>
+  );
+}
+
+
 function CombinedDashboard() {
     const [viewMode, setViewMode] = React.useState('dashboard');
     const [theme, setTheme] = React.useState('light');
@@ -107,7 +121,7 @@ function CombinedDashboard() {
     }, [theme]);
 
     React.useEffect(() => {
-        const ws = new WebSocket('ws://' + window.location.hostname);
+        const ws = new WebSocket('wss://' + window.location.hostname);
         wsRef.current = ws;
         
         ws.onopen = () => setStatus('Connected');
@@ -416,4 +430,4 @@ function CombinedDashboard() {
     );
 }
 
-export { CombinedDashboard };
+export default Dashboard;

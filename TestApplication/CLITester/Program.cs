@@ -12,7 +12,7 @@
         static bool isRunning = true;
         static WebSocketSharp.WebSocket ws;
         const int RECONNECT_DELAY_MS = 5000; // 5 second delay between reconnection attempts
-        const string WS_URL = "ws://165.232.95.199:3000";
+        const string WS_URL = "wss://165.232.95.199:3000";
 
         static void Main()
         {
