@@ -1,12 +1,12 @@
 // Login form handler
 function setupLoginForm() {
-    const loginForm = document.getElementById('login-form');
+    const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('error-message');
+            const errorMessage = document.getElementById('errorMessage');
 
             try {
                 const response = await fetch('/login', {
@@ -20,11 +20,10 @@ function setupLoginForm() {
                 if (response.ok) {
                     window.location.href = '/';
                 } else {
-                    errorMessage.textContent = 'Invalid username or password';
                     errorMessage.classList.remove('hidden');
                 }
             } catch (error) {
-                errorMessage.textContent = 'An error occurred. Please try again.';
+                console.error('Login error:', error);
                 errorMessage.classList.remove('hidden');
             }
         });

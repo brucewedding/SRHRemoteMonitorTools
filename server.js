@@ -52,6 +52,11 @@ function writeOneTimePasswords(passwords) {
     }
 }
 
+// Add specific route for /login to serve login.html
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'login.html'));
+});
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     const passwordHash = createHash(password);
@@ -81,9 +86,18 @@ app.post('/login', (req, res) => {
     res.sendStatus(401);
 });
 
+// Set proper MIME types for JavaScript modules before any other middleware
+app.use((req, res, next) => {
+    if (req.path.endsWith('.js')) {
+        res.type('application/javascript');
+    }
+    next();
+});
+
+// Authentication middleware
 app.use((req, res, next) => {
     // Allow access to login page and login endpoint
-    if (req.path === '/login' || req.path === '/login.html') {
+    if (req.path === '/login' || req.path === '/login.html' || req.path.startsWith('/assets/')) {
         return next();
     }
     
@@ -115,9 +129,22 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from dist directory first (production build)
-app.use(express.static('dist'));
+app.use(express.static('dist', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
 // Then fallback to public directory for any files not in dist
-app.use(express.static('public'));
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
 
 // Store WebSocket to username mapping
 const wsClients = new Map();

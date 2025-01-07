@@ -38,13 +38,27 @@ function Login() {
                             <label className="label" htmlFor="username">
                                 <span className="label-text">Username</span>
                             </label>
-                            <input type="text" id="username" name="username" className="input input-bordered w-full" required />
+                            <input 
+                                type="text" 
+                                id="username" 
+                                name="username" 
+                                className="input input-bordered w-full" 
+                                required 
+                                autoComplete="username"
+                            />
                         </div>
                         <div className="form-control">
                             <label className="label" htmlFor="password">
                                 <span className="label-text">Password</span>
                             </label>
-                            <input type="password" id="password" name="password" className="input input-bordered w-full" required />
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                className="input input-bordered w-full" 
+                                required 
+                                autoComplete="current-password"
+                            />
                         </div>
                         <button type="submit" className="btn btn-primary w-full">Login</button>
                         <div id="errorMessage" className="text-error text-center hidden">Invalid username or password</div>
