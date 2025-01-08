@@ -13,6 +13,7 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html') // Specify entry point
       },
       output: {
+        format: 'es',
         manualChunks: undefined,
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
@@ -24,5 +25,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  server: {
+    port: 5173,
+    strictPort: true
   }
 })

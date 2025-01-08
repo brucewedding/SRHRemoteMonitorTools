@@ -18,7 +18,7 @@
     "restart": "pm2 restart ecosystem.yml",
     "dev": "concurrently \"pm2 start ecosystem.yml --env development\" \"vite\"",
     "build": "vite build",
-    "deploy": "npm run build && scp -r dist/ server/ package.json ecosystem.yml root@realheartremote.live:/var/www/realheartremote.live/",
+    "deploy": "npm run build && ssh root@realheartremote.live \"rm -rf /var/www/realheartremote.live/dist/assets/*\" && scp -r dist/ server/ package.json ecosystem.yml index.html root@realheartremote.live:/var/www/realheartremote.live/",
     "preview": "vite preview",
     "build:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --watch"

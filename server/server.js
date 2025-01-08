@@ -1,40 +1,12 @@
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
-
-// Set proper MIME types for JavaScript modules before any other middleware
-app.use((req, res, next) => {
-    if (req.path.endsWith('.js')) {
-        res.type('application/javascript');
-    }
-    next();
-});
-
-// Serve static files from dist directory first (production build)
-app.use(express.static('dist', {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
-        }
-    }
-}));
-
-// Then fallback to public directory for any files not in dist
-app.use(express.static('public', {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
-        }
-    }
-}));
 
 // Store WebSocket to email mapping
 const wsClients = new Map();
