@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+# Define the target directory where the project is deployed
+TARGET_DIR=/var/www/realheartremote.live
+
+# If the target directory doesn't exist, clone the repository
+if [ ! -d "$TARGET_DIR" ]; then
+  git clone ~/repos/RealHeartMonitor.git "$TARGET_DIR"
+else
+  # Pull the latest changes
+  cd "$TARGET_DIR"
+  git reset --hard HEAD
+  git pull origin main
+fi
+
+# Install dependencies
+cd "$TARGET_DIR"
+npm install
+
+# Restart the server with PM2
+pm2 restart RealHeartServer
