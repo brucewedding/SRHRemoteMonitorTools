@@ -15,6 +15,7 @@ import {
 import { UserButton, useUser } from '@clerk/clerk-react';
 
 function CombinedDashboard() {
+    console.log('[Dashboard Version]: 2025-01-08 16:53');
     const { user } = useUser();
 
     // State management
