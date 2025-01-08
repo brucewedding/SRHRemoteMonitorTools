@@ -1,7 +1,7 @@
 apps:
   - name: RealheartServer
     script: server/server.js    # Path to your server script
-    cwd: /var/www/realheartmonitor.live  # Directory where the project lives on the server
+    cwd: /var/www/realheartremote.live  # Directory where the project lives on the server
     watch: false  
     env:
       NODE_ENV: production
