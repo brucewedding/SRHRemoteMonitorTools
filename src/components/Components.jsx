@@ -288,7 +288,7 @@ export function createChatModal(isOpen, onClose, onSend, messages = []) {
     );
 }
 
-export function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat) {
+export function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat, systemId) {
     const formatTime = (timestamp) => {
         if (!timestamp) return 'Never';
         if (timestamp instanceof Date) {
@@ -307,6 +307,9 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
         ),
         React.createElement('p', { className: 'opacity-70' }, 
           `Last update: ${formatTime(lastUpdate)}`
+        ),
+        systemId && React.createElement('p', { className: 'opacity-70 mt-1' },
+          `Remote: ${systemId}`
         )
       ),
       React.createElement('div', { className: 'flex gap-2' },

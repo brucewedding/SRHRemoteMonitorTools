@@ -9,7 +9,8 @@ export function DashboardHeader({
     onToggleView, 
     theme, 
     onThemeChange,
-    onOpenChat 
+    onOpenChat,
+    systemId 
 }) {
     return (
         <div className="flex flex-col gap-4 mb-6">
@@ -19,7 +20,8 @@ export function DashboardHeader({
                 isDetailedView, 
                 onToggleView, 
                 theme, 
-                onOpenChat
+                onOpenChat,
+                systemId
             )}
             <div className="flex justify-end">
                 <ThemeToggle theme={theme} onChange={onThemeChange} />

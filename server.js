@@ -65,7 +65,7 @@ wss.on('connection', (ws, req) => {
     const connectionMessage = {
         type: 'deviceMessage',
         timestamp: new Date().toISOString(),
-        email: email || 'Unknown User',
+        username: displayName,
         message: `${displayName} just connected`
     };
     
@@ -76,27 +76,34 @@ wss.on('connection', (ws, req) => {
     });
 
     ws.on('message', (data) => {
-        console.log('Raw message received:', data);  
-
         try {
             const message = JSON.parse(data.toString());
-            console.log('Timestamp:', new Date().toISOString());  
+            
             // Handle device messages differently from data updates
             if (message.type === 'deviceMessage') 
             {
-                // Create formatted message with email and timestamp
-                const broadcastMessage = {
-                    type: 'deviceMessage',
-                    timestamp: new Date().toISOString(),
-                    email: message.email || 'Unknown User',
-                    message: message.message
-                };
+                // Format the display name from the email
+                const displayName = formatDisplayName(message.email);
+                console.log('\n[Chat Message Processing]');
+                console.log('Email:', message.email);
+                console.log('Formatted name:', displayName);
                 
-                const broadcastString = JSON.stringify(broadcastMessage);
-                
+                // Send to all clients, marking the message as "self" for the sender
                 wss.clients.forEach((client) => {
                     if (client.readyState === ws.OPEN) {
-                        client.send(broadcastString);
+                        const broadcastMessage = {
+                            type: 'deviceMessage',
+                            timestamp: new Date().toISOString(),
+                            username: displayName,
+                            message: message.message,
+                            self: client === ws
+                        };
+                        
+                        console.log('\n[Broadcasting Message]');
+                        console.log('To client:', client === ws ? 'sender' : 'other');
+                        console.log('Message:', JSON.stringify(broadcastMessage, null, 2));
+                        
+                        client.send(JSON.stringify(broadcastMessage));
                     }
                 });
             }
@@ -122,7 +129,7 @@ wss.on('connection', (ws, req) => {
                 const broadcastMessage = {
                     type: 'deviceMessage',
                     timestamp: new Date().toISOString(),
-                    email: email,
+                    username: formatDisplayName(email),
                     message: data.toString()
                 };
                 

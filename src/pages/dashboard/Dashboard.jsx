@@ -1,5 +1,4 @@
 import React from 'react';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { ChartManager } from '../../utils/ChartManager';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import {
@@ -23,6 +22,7 @@ function CombinedDashboard() {
     const [messages, setMessages] = React.useState([]);
     const [data, setData] = React.useState(null);
     const [status, setStatus] = React.useState('Connecting...');
+    const [systemId, setSystemId] = React.useState('');
     const [dataUpdateCount, setDataUpdateCount] = React.useState(0);
     const [detailedData, setDetailedData] = React.useState({
         StatusData: {
@@ -100,7 +100,8 @@ function CombinedDashboard() {
         LastUpdate: new Date().toLocaleString()
     });
 
-    const { user } = useUser();
+    const { user } = useUser()
+
 
     // Refs
     const wsRef = React.useRef(null);
@@ -118,12 +119,13 @@ function CombinedDashboard() {
 
     const handleSendMessage = React.useCallback((message) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            const email = user.emailAddresses[0].emailAddress;
             wsRef.current.send(JSON.stringify({
                 type: 'deviceMessage',
                 message: message,
                 email: user.emailAddresses[0].emailAddress
             }));
-            setMessages(prev => [...prev, { text: message, sender: 'user' }]);
+            // Don't add to local state, we'll receive it back from server
         }
     }, [user]);
 
@@ -158,18 +160,27 @@ function CombinedDashboard() {
     }, [dataUpdateCount, viewMode]);
 
     React.useEffect(() => {
-        const ws = new WebSocket('wss://realheartremote.live/ws');
+        const ws = new WebSocket(import.meta.env.VITE_WS_URL);
         wsRef.current = ws;
         
-        ws.onopen = () => setStatus('Connected');
-        ws.onclose = () => setStatus('Disconnected');
-        ws.onmessage = (event) => {
+        const handleOpen = () => setStatus('Connected');
+        const handleClose = () => setStatus('Disconnected');
+        const handleMessage = (event) => {
             const data = JSON.parse(event.data);
             
             if (data.type === 'deviceMessage') 
                 {
-                setMessages(prev => [...prev, { text: data.message, sender: 'device' }]);
+                setMessages(prev => [...prev, { 
+                    message: data.message,  
+                    sender: data.self ? 'user' : 'device',
+                    username: data.username,
+                    timestamp: data.timestamp || new Date().toISOString()
+                }]);
                 return;
+            }
+            
+            if (data.SystemId) {
+                setSystemId(data.SystemId);
             }
             
             setDetailedData(prevData => ({
@@ -193,7 +204,14 @@ function CombinedDashboard() {
             }
         };
         
+        ws.addEventListener('open', handleOpen);
+        ws.addEventListener('close', handleClose);
+        ws.addEventListener('message', handleMessage);
+        
         return () => {
+            ws.removeEventListener('open', handleOpen);
+            ws.removeEventListener('close', handleClose);
+            ws.removeEventListener('message', handleMessage);
             if (ws.readyState === WebSocket.OPEN) {
                 ws.close();
             }
@@ -370,7 +388,7 @@ function CombinedDashboard() {
     return React.createElement('div', { className: 'container mx-auto p-4 max-w-7xl' },
         React.createElement('div', { className: 'flex items-center justify-between mb-4' },
             React.createElement('div', { className: 'flex-1' },
-                createHeader(status, detailedData.LastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true))
+                createHeader(status, detailedData.LastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true), systemId)
             ),
             React.createElement(ThemeToggle, {
                 theme: theme,
