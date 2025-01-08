@@ -1,4 +1,29 @@
+import {
+    Chart,
+    LineController,
+    LineElement,
+    PointElement,
+    LinearScale,
+    TimeScale,
+    Title,
+    Legend,
+    Tooltip
+} from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import { createChartConfig } from './utils';
+
+// Register required components
+Chart.register(
+    LineController,
+    LineElement,
+    PointElement,
+    LinearScale,
+    TimeScale,
+    Title,
+    Legend,
+    Tooltip,
+    zoomPlugin
+);
 
 const MAX_DATA_POINTS = 180;
 

@@ -1,48 +1,39 @@
 import React from 'react';
-import { extractValue } from '../../utils/utils';
-import { ThemeToggle } from '../../components/ThemeToggle';
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { ChartManager } from '../../utils/ChartManager';
-import { 
-    createHeader, 
-    createCard, 
-    createDetailCard, 
-    createPressureCard, 
+import { ThemeToggle } from '../../components/ThemeToggle';
+import {
+    createCard,
+    createDetailCard,
+    createPressureCard,
     createSensorStatusCard,
-    createChartCard,
     createChatModal,
-    createFooter 
+    createHeader,
+    createFooter,
+    ChartCard
 } from '../../components/Components';
 
 import { UserButton, useUser } from '@clerk/clerk-react';
 
-function Dashboard() {
-  const { user } = useUser();
-  
-  return (
-    <div>
-      <UserButton /> {/* Adds the user menu button */}
-      {CombinedDashboard()}
-    </div>
-  );
-}
-
-
 function CombinedDashboard() {
+    // State management
     const [viewMode, setViewMode] = React.useState('dashboard');
     const [theme, setTheme] = React.useState('light');
     const [isChatOpen, setIsChatOpen] = React.useState(false);
     const [messages, setMessages] = React.useState([]);
-    const wsRef = React.useRef(null);
+    const [data, setData] = React.useState(null);
+    const [status, setStatus] = React.useState('Connecting...');
+    const [dataUpdateCount, setDataUpdateCount] = React.useState(0);
     const [detailedData, setDetailedData] = React.useState({
         StatusData: {
             ExtLeft: { Text: '-', Color: 'badge-info' },
             ExtRight: { Text: '-', Color: 'badge-info' },
+            IntLeft: { Text: '-', Color: 'badge-info' },
+            IntRight: { Text: '-', Color: 'badge-info' },
             CANStatus: { Text: '-', Color: 'badge-info' },
             BytesSent: { Text: '-', Color: 'badge-info' },
             BytesRecd: { Text: '-', Color: 'badge-info' },
             Strokes: { Text: '-', Color: 'badge-info' },
-            IntLeft: { Text: '-', Color: 'badge-info' },
-            IntRight: { Text: '-', Color: 'badge-info' },
             BusLoad: { Text: '-', Color: 'badge-info' }
         },
         LeftHeart: { 
@@ -76,8 +67,8 @@ function CombinedDashboard() {
             }
         },
         HeartRate: '0',
-        OperationState: '',
-        HeartStatus: '',
+        OperationState: '-',
+        HeartStatus: '-',
         FlowLimitState: '',
         FlowLimit: '0',
         UseMedicalSensor: false,
@@ -105,23 +96,66 @@ function CombinedDashboard() {
             PrimaryValue: '0',
             SecondaryValue: null,
             BackColor: null
-        }
+        },
+        LastUpdate: new Date().toLocaleString()
     });
-    const [lastUpdate, setLastUpdate] = React.useState(null);
-    const [status, setStatus] = React.useState('Connecting...');
-    const dataUpdateRef = React.useRef(0);
-    const chartManager = React.useRef(new ChartManager());
 
+    // Refs
+    const wsRef = React.useRef(null);
+    const chartManager = React.useRef(new ChartManager());
+    const chartInitializedRef = React.useRef(false);
+
+    // Callbacks
+    const handleThemeToggle = React.useCallback(() => {
+        setTheme(prevTheme => prevTheme === 'light' ? 'business' : 'light');
+    }, []);
+
+    const handleViewToggle = React.useCallback(() => {
+        setViewMode(prev => prev === 'dashboard' ? 'charts' : 'dashboard');
+    }, []);
+
+    const handleSendMessage = React.useCallback((message) => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'deviceMessage',
+                message: message
+            }));
+            setMessages(prev => [...prev, { text: message, sender: 'user' }]);
+        }
+    }, []);
+
+    // Effects
     React.useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        if (viewMode === 'charts') {
+    }, [theme]);
+
+    React.useEffect(() => {
+        if (viewMode === 'charts' && !chartInitializedRef.current) {
+            chartManager.current.setupCharts(theme);
+            chartInitializedRef.current = true;
+        } else if (viewMode !== 'charts' && chartInitializedRef.current) {
+            chartManager.current.destroyCharts();
+            chartInitializedRef.current = false;
+        }
+    }, [viewMode]);
+
+    // Update charts when theme changes
+    React.useEffect(() => {
+        if (viewMode === 'charts' && chartInitializedRef.current) {
             chartManager.current.destroyCharts();
             chartManager.current.setupCharts(theme);
         }
     }, [theme]);
 
+    // Update chart data
     React.useEffect(() => {
-        const ws = new WebSocket('wss://' + window.location.hostname);
+        if (viewMode === 'charts' && chartInitializedRef.current) {
+            chartManager.current.updateCharts();
+        }
+    }, [dataUpdateCount, viewMode]);
+
+    React.useEffect(() => {
+        const ws = new WebSocket('wss://realheartremote.live/ws');
         wsRef.current = ws;
         
         ws.onopen = () => setStatus('Connected');
@@ -129,106 +163,38 @@ function CombinedDashboard() {
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
-            // Handle device messages
             if (data.type === 'deviceMessage') {
-                setMessages(prevMessages => [...prevMessages, {
-                    username: data.username,
-                    message: data.message,
-                    timestamp: data.timestamp
-                }]);
+                setMessages(prev => [...prev, { text: data.message, sender: 'device' }]);
                 return;
             }
             
-            // Handle regular data updates
-            setLastUpdate(new Date());
-            
-            // Process the data to extract PrimaryValue from any objects
-            const processedData = {
-                ...detailedData,
-                StatusData: data.StatusData || detailedData.StatusData,
-                HeartRate: extractValue(data.HeartRate),
-                OperationState: extractValue(data.OperationState),
-                HeartStatus: extractValue(data.HeartStatus),
-                FlowLimitState: extractValue(data.FlowLimitState),
-                FlowLimit: extractValue(data.FlowLimit),
-                UseMedicalSensor: data.UseMedicalSensor,
-                UseInternalSensor: !data.UseMedicalSensor,
-                CVPSensor: data.CVPSensor || {
-                    Name: '',
-                    PrimaryValue: '0',
-                    SecondaryValue: null,
-                    BackColor: null
-                },
-                PAPSensor: data.PAPSensor || {
-                    Name: '',
-                    PrimaryValue: '0',
-                    SecondaryValue: null,
-                    BackColor: null
-                },
-                AoPSensor: data.AoPSensor || {
-                    Name: '',
-                    PrimaryValue: '0',
-                    SecondaryValue: null,
-                    BackColor: null
-                },
-                ArtPressSensor: data.ArtPressSensor || {
-                    Name: '',
-                    PrimaryValue: '0',
-                    SecondaryValue: null,
-                    BackColor: null
-                },
-                LeftHeart: {
-                    StrokeVolume: data.LeftHeart?.StrokeVolume || '0',
-                    PowerConsumption: data.LeftHeart?.PowerConsumption || '0',
-                    IntPressure: data.LeftHeart?.IntPressure || '0',
-                    IntPressureMin: data.LeftHeart?.IntPressureMin || '0',
-                    IntPressureMax: data.LeftHeart?.IntPressureMax || '0',
-                    AtrialPressure: data.LeftHeart?.AtrialPressure || '0',
-                    CardiacOutput: data.LeftHeart?.CardiacOutput || '0',
-                    MedicalPressure: data.LeftHeart?.MedicalPressure || {
-                        Name: '',
-                        PrimaryValue: '-',
-                        SecondaryValue: null,
-                        BackColor: null
-                    }
-                },
-                RightHeart: {
-                    StrokeVolume: data.RightHeart?.StrokeVolume || '0',
-                    PowerConsumption: data.RightHeart?.PowerConsumption || '0',
-                    IntPressure: data.RightHeart?.IntPressure || '0',
-                    IntPressureMin: data.RightHeart?.IntPressureMin || '0',
-                    IntPressureMax: data.RightHeart?.IntPressureMax || '0',
-                    AtrialPressure: data.RightHeart?.AtrialPressure || '0',
-                    CardiacOutput: data.RightHeart?.CardiacOutput || '0',
-                    MedicalPressure: data.RightHeart?.MedicalPressure || {
-                        Name: '',
-                        PrimaryValue: '-',
-                        SecondaryValue: null,
-                        BackColor: null
-                    }
-                }
-            };
-            
-            setDetailedData(processedData);
-            chartManager.current.updateStoredChartData(data);
-            dataUpdateRef.current += 1;
+            setDetailedData(prevData => ({
+                ...prevData,
+                StatusData: data.StatusData || prevData.StatusData,
+                LeftHeart: data.LeftHeart || prevData.LeftHeart,
+                RightHeart: data.RightHeart || prevData.RightHeart,
+                HeartRate: data.HeartRate || prevData.HeartRate,
+                CVPSensor: data.CVPSensor || prevData.CVPSensor,
+                PAPSensor: data.PAPSensor || prevData.PAPSensor,
+                AoPSensor: data.AoPSensor || prevData.AoPSensor,
+                ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
+                OperationState: data.OperationState || prevData.OperationState,
+                HeartStatus: data.HeartStatus || prevData.HeartStatus,
+                LastUpdate: new Date().toLocaleTimeString()
+            }));
+
+            if (chartManager.current) {
+                chartManager.current.updateStoredChartData(data);
+                setDataUpdateCount(count => count + 1);
+            }
         };
         
-        return () => ws.close();
+        return () => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+        };
     }, []);
-
-    React.useEffect(() => {
-        if (viewMode === 'charts') {
-            chartManager.current.destroyCharts();
-            chartManager.current.setupCharts(theme);
-        }
-    }, [viewMode]);
-
-    React.useEffect(() => {
-        if (viewMode === 'charts') {
-            chartManager.current.updateCharts();
-        }
-    }, [dataUpdateRef.current, viewMode]);
 
     // Auto-scroll messages when new ones arrive
     React.useEffect(() => {
@@ -240,15 +206,7 @@ function CombinedDashboard() {
         }
     }, [messages, isChatOpen]);
 
-    const handleSendMessage = (message) => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-                type: 'deviceMessage',
-                message: message
-            }));
-        }
-    };
-
+    // Render functions
     function renderDashboard() {
         return React.createElement('div', null,
             // Status Cards
@@ -358,75 +316,79 @@ function CombinedDashboard() {
     }
 
     function renderCharts() {
-        return React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4' },
-            createChartCard(
-                'Heart Rate',
-                `${detailedData.HeartRate} bpm`,
-                'red',
-                'heartRateChart'
-            ),
-            createChartCard(
-                'Power Cons.',
-                `L: ${extractValue(detailedData.LeftHeart.PowerConsumption)} W\nR: ${extractValue(detailedData.RightHeart.PowerConsumption)} W`,
-                'yellow',
-                'powerConsumptionChart'
-            ),
-            createChartCard(
-                'Atrial Press',
-                `L: ${extractValue(detailedData.LeftHeart.AtrialPressure)} mmHg\nR: ${extractValue(detailedData.RightHeart.AtrialPressure)} mmHg`,
-                'sky',
-                'atrialPressureChart'
-            ),
-            createChartCard(
-                'Cardiac Output',
-                `L: ${extractValue(detailedData.LeftHeart.CardiacOutput)} L/min\nR: ${extractValue(detailedData.RightHeart.CardiacOutput)} L/min`,
-                'green',
-                'cardiacOutputChart'
-            ),
-            createChartCard(
-                'Stroke Volume',
-                `L: ${extractValue(detailedData.LeftHeart.StrokeVolume)} ml\nR: ${extractValue(detailedData.RightHeart.StrokeVolume)} ml`,
-                'purple',
-                'strokeVolumeChart'
-            ),
-            createChartCard(
-                'Low Press (CVP, PAP)',
-                `CVP: ${extractValue(detailedData.CVPSensor)} mmHg\nPAP: ${extractValue(detailedData.PAPSensor)} mmHg`,
-                'blue',
-                'lowPressuresChart'
-            ),
-            createChartCard(
-                'High Press (AoP, Art)',
-                `AoP: ${extractValue(detailedData.AoPSensor)} mmHg\nArt: ${extractValue(detailedData.ArtPressSensor)} mmHg`,
-                'red',
-                'highPressuresChart'
-            )
+        return React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4' },
+            React.createElement(ChartCard, {
+                title: 'Heart Rate',
+                value: `${detailedData?.HeartRate?.PrimaryValue || detailedData?.HeartRate || 0} bpm`,
+                color: 'red',
+                chartId: 'heartRateChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'Power Consumption',
+                value: `L: ${detailedData?.LeftHeart?.PowerConsumption?.PrimaryValue || detailedData?.LeftHeart?.PowerConsumption || 0} W R: ${detailedData?.RightHeart?.PowerConsumption?.PrimaryValue || detailedData?.RightHeart?.PowerConsumption || 0} W`,
+                color: 'blue',
+                chartId: 'powerConsumptionChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'Atrial Pressure',
+                value: `L: ${detailedData?.LeftHeart?.AtrialPressure?.PrimaryValue || detailedData?.LeftHeart?.AtrialPressure || 0} mmHg R: ${detailedData?.RightHeart?.AtrialPressure?.PrimaryValue || detailedData?.RightHeart?.AtrialPressure || 0} mmHg`,
+                color: 'blue',
+                chartId: 'atrialPressureChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'Cardiac Output',
+                value: `L: ${detailedData?.LeftHeart?.CardiacOutput?.PrimaryValue || detailedData?.LeftHeart?.CardiacOutput || 0} L/min R: ${detailedData?.RightHeart?.CardiacOutput?.PrimaryValue || detailedData?.RightHeart?.CardiacOutput || 0} L/min`,
+                color: 'blue',
+                chartId: 'cardiacOutputChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'Stroke Volume',
+                value: `L: ${detailedData?.LeftHeart?.StrokeVolume?.PrimaryValue || detailedData?.LeftHeart?.StrokeVolume || 0} ml R: ${detailedData?.RightHeart?.StrokeVolume?.PrimaryValue || detailedData?.RightHeart?.StrokeVolume || 0} ml`,
+                color: 'blue',
+                chartId: 'strokeVolumeChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'Low Pressures',
+                value: `CVP: ${detailedData?.CVPSensor?.PrimaryValue || detailedData?.CVPSensor || 0} mmHg PAP: ${detailedData?.PAPSensor?.PrimaryValue || detailedData?.PAPSensor || 0} mmHg`,
+                color: 'blue',
+                chartId: 'lowPressuresChart'
+            }),
+            React.createElement(ChartCard, {
+                title: 'High Pressures',
+                value: `AoP: ${detailedData?.AoPSensor?.PrimaryValue || detailedData?.AoPSensor || 0} mmHg Art: ${detailedData?.ArtPressSensor?.PrimaryValue || detailedData?.ArtPressSensor || 0} mmHg`,
+                color: 'blue',
+                chartId: 'highPressuresChart'
+            })
         );
     }
 
-    const handleViewToggle = () => {
-        setViewMode(viewMode === 'dashboard' ? 'charts' : 'dashboard');
-    };
-
-    const handleThemeToggle = () => {
-        setTheme(theme === 'dark' ? 'light' : 'dark');
-    };
-
+    // Component render
     return React.createElement('div', { className: 'container mx-auto p-4 max-w-7xl' },
         React.createElement('div', { className: 'flex items-center justify-between mb-4' },
             React.createElement('div', { className: 'flex-1' },
-                createHeader(status, lastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true))
+                createHeader(status, detailedData.LastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true))
             ),
             React.createElement(ThemeToggle, {
                 theme: theme,
                 onToggle: handleThemeToggle
             })
         ),
-        React.createElement('div', { className: 'pb-16' }, // Add padding at the bottom to prevent content from being hidden behind the footer
+        React.createElement('div', { className: 'pb-16' },
             viewMode === 'dashboard' ? renderDashboard() : renderCharts()
         ),
         createChatModal(isChatOpen, () => setIsChatOpen(false), handleSendMessage, messages),
         createFooter()
+    );
+}
+
+function Dashboard() {
+    const { user } = useUser();
+    
+    return (
+        <div>
+            <UserButton />
+            <CombinedDashboard />
+        </div>
     );
 }
 

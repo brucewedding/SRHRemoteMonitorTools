@@ -13,7 +13,7 @@
         static bool isRunning = true;
         static WebSocketSharp.WebSocket ws;
         const int RECONNECT_DELAY_MS = 5000; // 5 second delay between reconnection attempts
-        const string WS_URL = "wss://realheartremote.live:3000";
+        const string WS_URL = "wss://realheartremote.live/ws";
 
         static void Main()
         {

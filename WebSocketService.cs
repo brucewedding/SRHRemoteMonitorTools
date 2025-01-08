@@ -19,7 +19,7 @@ namespace SRH_CommonAssembly.Communication.RemoteViewer
         private readonly Timer _updateTimer;
         private readonly MonitorDataCollector _dataCollector;
 
-        public WebSocketService(MonitorDataCollector dataCollector, string websocketUrl = "wss://165.232.95.199")
+        public WebSocketService(MonitorDataCollector dataCollector, string websocketUrl = "wss://realheartremote.live/ws")
         {
             _dataCollector = dataCollector;
             _ws = new WebSocket(websocketUrl);

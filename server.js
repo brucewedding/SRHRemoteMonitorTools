@@ -1,90 +1,15 @@
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const http = require('http');
-const crypto = require('crypto');
-const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
+const { useUser } = require('@clerk/clerk-react');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
-app.use(cookieParser());
-
-// Secret key for HMAC - this should match the key in the C# program
-const secretKey = 'SRHMonitorSecretKey2024';
-
-// Main admin credentials
-const adminUsername = 'admin';
-const hashedPassword = 'a9698e619ff9ba20a5e9c8005bc247d85cc60b7e38c4d9bee21baa254ac101b3';
-
-// File to store one-time password hashes
-const passwordsFile = path.join(__dirname, 'passwords.hash');
-
-// Function to create HMAC hash
-function createHash(password) {
-    const hmac = crypto.createHmac('sha256', secretKey);
-    hmac.update(password);
-    return hmac.digest('hex');
-}
-
-// Function to read passwords from file
-function readOneTimePasswords() {
-    try {
-        if (fs.existsSync(passwordsFile)) {
-            const content = fs.readFileSync(passwordsFile, 'utf8');
-            return content.split('\n').filter(line => line.trim());
-        }
-    } catch (err) {
-        console.error('Error reading passwords file:', err);
-    }
-    return [];
-}
-
-// Function to write passwords to file
-function writeOneTimePasswords(passwords) {
-    try {
-        fs.writeFileSync(passwordsFile, passwords.join('\n'));
-    } catch (err) {
-        console.error('Error writing passwords file:', err);
-    }
-}
-
-// Add specific route for /login to serve login.html
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'login.html'));
-});
-
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const passwordHash = createHash(password);
-    
-    // Check main admin credentials
-    if (username === adminUsername && passwordHash === hashedPassword) {
-        // Set auth cookie with both username and password
-        res.cookie('auth', JSON.stringify({ username, password }), { httpOnly: true });
-        return res.sendStatus(200);
-    }
-    
-    // Check one-time passwords (these will use the provided username)
-    const oneTimePasswords = readOneTimePasswords();
-    const oneTimeIndex = oneTimePasswords.findIndex(hash => hash === passwordHash);
-    
-    if (oneTimeIndex !== -1) {
-        // Remove the used one-time password
-        oneTimePasswords.splice(oneTimeIndex, 1);
-        writeOneTimePasswords(oneTimePasswords);
-        
-        // Set auth cookie with both username and password
-        res.cookie('auth', JSON.stringify({ username, password }), { httpOnly: true });
-        return res.sendStatus(200);
-    }
-    
-    // No valid credentials found
-    res.sendStatus(401);
-});
 
 // Set proper MIME types for JavaScript modules before any other middleware
 app.use((req, res, next) => {
@@ -92,40 +17,6 @@ app.use((req, res, next) => {
         res.type('application/javascript');
     }
     next();
-});
-
-// Authentication middleware
-app.use((req, res, next) => {
-    // Allow access to login page and login endpoint
-    if (req.path === '/login' || req.path === '/login.html' || req.path.startsWith('/assets/')) {
-        return next();
-    }
-    
-    const auth = req.cookies.auth;
-    if (!auth) {
-        return res.redirect('/login.html');
-    }
-    
-    try {
-        const { username, password } = JSON.parse(auth);
-        const authHash = createHash(password);
-        
-        // Check main admin credentials
-        if (username === adminUsername && authHash === hashedPassword) {
-            return next();
-        }
-        
-        // Check one-time passwords
-        const oneTimePasswords = readOneTimePasswords();
-        if (oneTimePasswords.some(hash => hash === authHash)) {
-            return next();
-        }
-    } catch (err) {
-        console.error('Auth cookie parsing error:', err);
-    }
-    
-    // No valid credentials found
-    res.redirect('/login.html');
 });
 
 // Serve static files from dist directory first (production build)
@@ -146,71 +37,69 @@ app.use(express.static('public', {
     }
 }));
 
-// Store WebSocket to username mapping
+// Store WebSocket to email mapping
 const wsClients = new Map();
 
 // WebSocket connection handling
 wss.on('connection', (ws, req) => {
-    console.log('New client connected');
 
-    // Extract username from cookie
-    const cookies = req.headers.cookie;
-    if (cookies) {
-        const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='));
-        if (authCookie) {
-            try {
-                const authData = JSON.parse(decodeURIComponent(authCookie.split('=')[1]));
-                wsClients.set(ws, authData.username);
-            } catch (err) {
-                console.error('Error parsing auth cookie:', err);
-            }
-        }
+    // Get user email from Clerk
+    const user = req.auth?.userId;
+    if (user && user.emailAddresses && user.emailAddresses.length > 0) {
+        wsClients.set(ws, user.emailAddresses[0].emailAddress);
+    } else {
+        wsClients.set(ws, 'Unknown User');
     }
+    console.log(`${wsClients.get(ws)} just connected`);
 
     ws.on('message', (data) => {
-        console.log('Raw message received:', data);  // Add this line
+        console.log('Raw message received:', data);  
 
         try {
             const message = JSON.parse(data.toString());
-            console.log('Just Received:', message);  // Use comma instead of +
-            console.log('Username:', wsClients.get(ws) || 'Unknown User');  // Use comma instead of +
-            console.log('Timestamp:', new Date().toISOString());  // Use comma instead of +
+            console.log('Timestamp:', new Date().toISOString());  
             // Handle device messages differently from data updates
-            if (message.type === 'deviceMessage') {
-                // Create formatted message with username and timestamp
+            if (message.type === 'deviceMessage') 
+            {
+                // Create formatted message with email and timestamp
                 const broadcastMessage = {
                     type: 'deviceMessage',
                     timestamp: new Date().toISOString(),
-                    username: wsClients.get(ws) || 'Unknown User',
+                    email: wsClients.get(ws) || 'Unknown User',
                     message: message.message
                 };
                 
                 const broadcastString = JSON.stringify(broadcastMessage);
                 
-                // Send to ALL clients INCLUDING the sender
                 wss.clients.forEach((client) => {
                     if (client.readyState === ws.OPEN) {
                         client.send(broadcastString);
                     }
                 });
-            } else {
+            }
+            else 
+            {
                 // Handle regular data updates (broadcast to other clients only)
-                wss.clients.forEach((client) => {
-                    if (client !== ws && client.readyState === ws.OPEN) {
+                wss.clients.forEach((client) => 
+                {
+                    if (client !== ws && client.readyState === ws.OPEN) 
+                    {
                         client.send(data.toString());
                     }
                 });
             }
-        } catch (error) {
+        } 
+        catch (error) 
+        {
             console.error('Error processing message:', error);
             // Don't forward raw messages on parse error
             // Instead, try to handle it as a device message if possible
             try {
-                const username = wsClients.get(ws) || 'Unknown User';
+                const email = wsClients.get(ws) || 'Unknown User';
                 const broadcastMessage = {
                     type: 'deviceMessage',
                     timestamp: new Date().toISOString(),
-                    username: username,
+                    email: email,
                     message: data.toString()
                 };
                 

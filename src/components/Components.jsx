@@ -1,10 +1,11 @@
 import React from 'react';
+import { Chart } from 'chart.js/auto';
 
 // Card components for the dashboard
 export function createCard(label, value, color) {
     return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
       React.createElement('div', { className: 'card-body py-1 px-2' },
-        React.createElement('h3', { className: 'card-title text-sm sm:text-base opacity-80' }, label),
+        React.createElement('h3', { className: 'card-title text-sm sm:text-base opacity-70' }, label),
         React.createElement('div', { className: `text-lg sm:text-xl font-bold text-${color}-500` }, value)
       )
     );
@@ -49,13 +50,13 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     }
 
     // Extract display value and units
-    let displayValue = '';
+    let displayValue = '-';
     let units = '';
 
     // If value is an object with PrimaryValue, use that
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
-        displayValue = value.PrimaryValue;
-    } else if (typeof value === 'string') {
+        displayValue = value.PrimaryValue || '-';
+    } else if (value != null && typeof value === 'string') {
         // If value is a string, try to extract units
         const match = value.match(/^([\d.]+)(\s*L\/min|\s*\w+)?$/);
         if (match) {
@@ -64,9 +65,9 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
                 (match[2].includes('L/min') ? 'L/min' : match[2].trim()) : 
                 '';
         } else {
-            displayValue = value;
+            displayValue = value || '-';
         }
-    } else {
+    } else if (value != null) {
         displayValue = String(value);
     }
 
@@ -218,50 +219,17 @@ export function createSensorStatusCard(label, isActive) {
     );
 }
 
-export function createChartCard(title, value, color, chartId) {
-    // Function to process value text
-    function processValueText(text) {
-        return React.createElement('div', { className: `text-2xl font-bold text-${color}-500` },
-            text.split(/(\s*(?:L:|R:|CVP:|PAP:|AoP:|Art:)\s*)/).map((part, index) => {
-                // Add line break before R: values
-                if (part.trim() === 'R:') {
-                    return [
-                        React.createElement('br', { key: `br-${index}` }),
-                        part
-                    ];
-                }
-                // Keep descriptors (L:, CVP:, etc.) at original size
-                if (/(?:L:|CVP:|PAP:|AoP:|Art:)/.test(part)) {
-                    return part;
-                }
-                // Process the remaining parts for units
-                return part.split(/(\d+\.?\d*)|(mmHg|W|L\/min|ml|bpm)/).map((subPart, subIndex) => {
-                    if (!subPart) return null;
-                    // If it's a number or empty/whitespace, keep original size
-                    if (/^\d+\.?\d*$/.test(subPart) || /^\s*$/.test(subPart)) {
-                        return subPart;
-                    }
-                    // If it's a unit, make it smaller
-                    return React.createElement('span', {
-                        key: `${index}-${subIndex}`,
-                        className: 'text-sm opacity-70'
-                    }, subPart);
-                });
-            })
-        );
-    }
-
+export function ChartCard({ title, value, color, chartId }) {
     return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
-        React.createElement('div', { className: 'card-body p-2' },
-            React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-                React.createElement('h4', { className: 'card-title' }, title),
-                processValueText(value)
-            ),
-            React.createElement('div', { style: { height: '300px' } },
-                React.createElement('canvas', { 
-                    id: chartId,
-                    key: chartId
-                })
+        React.createElement('div', { className: 'card-body p-4' },
+            React.createElement('div', { className: 'flex flex-col' },
+                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                    React.createElement('h2', { className: 'card-title text-lg' }, title),
+                    React.createElement('span', { className: 'text-lg font-semibold' }, value)
+                ),
+                React.createElement('div', { className: 'w-full h-48' },
+                    React.createElement('canvas', { id: chartId })
+                )
             )
         )
     );
@@ -321,6 +289,14 @@ export function createChatModal(isOpen, onClose, onSend, messages = []) {
 }
 
 export function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat) {
+    const formatTime = (timestamp) => {
+        if (!timestamp) return 'Never';
+        if (timestamp instanceof Date) {
+            return timestamp.toLocaleTimeString();
+        }
+        return timestamp;
+    };
+
     return React.createElement('div', { className: 'flex flex-wrap justify-between items-center mb-4 gap-2' },
       React.createElement('div', null,
         React.createElement('h2', { className: 'text-lg font-bold flex items-center gap-2' },
@@ -330,7 +306,7 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
           }, status)
         ),
         React.createElement('p', { className: 'opacity-70' }, 
-          `Last update: ${lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}`
+          `Last update: ${formatTime(lastUpdate)}`
         )
       ),
       React.createElement('div', { className: 'flex gap-2' },
@@ -365,7 +341,7 @@ export function createFooter() {
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 className: 'link link-hover'
-            }, 'Copyright © 2024 Scandinavian Real Heart AB')
+            }, 'Copyright  2024 Scandinavian Real Heart AB')
         )
     );
 }

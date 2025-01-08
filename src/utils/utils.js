@@ -52,43 +52,27 @@ export function createChartConfig(label, color, minY, maxY, datasets, data, them
                         boxWidth: 12,
                         padding: 20,
                         color: isDark ? 'rgb(229, 231, 235)' : 'rgb(31, 41, 55)'
-                    },
-                    onClick: function(e, legendItem, legend) {
-                        if (e.native && e.native.type === 'click') {
-                            const index = legendItem.datasetIndex;
-                            const ci = legend.chart;
-                            const meta = ci.getDatasetMeta(index);
-                            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
-                            ci.update();
-                        }
                     }
                 },
                 zoom: {
-                    limits: {
-                        y: {min: 'original', max: 'original'},
-                        x: {min: 'original', max: 'original'}
-                    },
                     pan: {
                         enabled: true,
-                        mode: 'xy',
-                        modifierKey: 'ctrl',
-                        threshold: 10,
-                        overScaleMode: 'y'
+                        mode: 'x',
+                        modifierKey: 'ctrl'
                     },
                     zoom: {
                         wheel: {
                             enabled: true,
-                            speed: 0.1
+                            modifierKey: 'ctrl'
                         },
                         pinch: {
                             enabled: true
                         },
-                        mode: 'xy',
-                        drag: {
-                            enabled: true,
-                            backgroundColor: 'rgba(127,127,127,0.2)',
-                            threshold: 10
-                        }
+                        mode: 'x',
+                    },
+                    limits: {
+                        x: {min: 'original', max: 'original'},
+                        y: {min: minY, max: maxY}
                     }
                 }
             }
@@ -101,10 +85,8 @@ export function extractValue(value) {
     if (value === null || value === undefined) {
         return '-';
     }
-    
-    if (typeof value === 'object' && value.hasOwnProperty('PrimaryValue')) {
-        return value.PrimaryValue;
+    if (typeof value === 'object' && 'PrimaryValue' in value) {
+        return value.PrimaryValue || '-';
     }
-    
-    return value.toString();
+    return value;
 }
