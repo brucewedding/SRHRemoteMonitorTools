@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,10 +19,11 @@ namespace SRH_CommonAssembly.Communication.RemoteViewer
         private readonly Timer _updateTimer;
         private readonly MonitorDataCollector _dataCollector;
 
-        public WebSocketService(MonitorDataCollector dataCollector, string websocketUrl = "wss://realheartremote.live/ws")
+        public WebSocketService(MonitorDataCollector dataCollector, string websocketUrl = "wss://realheartremote.live/ws", string userEmail = null)
         {
             _dataCollector = dataCollector;
-            _ws = new WebSocket(websocketUrl);
+            var finalUrl = userEmail != null ? $"{websocketUrl}?email={Uri.EscapeDataString(userEmail)}" : websocketUrl;
+            _ws = new WebSocket(finalUrl);
             _ws.OnOpen += (sender, e) => Console.WriteLine("Connection opened");
             _ws.OnError += (sender, e) => Console.WriteLine($"Error: {e.Message}");
             _ws.OnClose += (sender, e) => Console.WriteLine($"Connection closed: {e.Reason}");

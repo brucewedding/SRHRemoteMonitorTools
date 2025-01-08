@@ -100,6 +100,8 @@ function CombinedDashboard() {
         LastUpdate: new Date().toLocaleString()
     });
 
+    const { user } = useUser();
+
     // Refs
     const wsRef = React.useRef(null);
     const chartManager = React.useRef(new ChartManager());
@@ -118,11 +120,12 @@ function CombinedDashboard() {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
                 type: 'deviceMessage',
-                message: message
+                message: message,
+                email: user.emailAddresses[0].emailAddress
             }));
             setMessages(prev => [...prev, { text: message, sender: 'user' }]);
         }
-    }, []);
+    }, [user]);
 
     // Effects
     React.useEffect(() => {
@@ -163,7 +166,8 @@ function CombinedDashboard() {
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
-            if (data.type === 'deviceMessage') {
+            if (data.type === 'deviceMessage') 
+                {
                 setMessages(prev => [...prev, { text: data.message, sender: 'device' }]);
                 return;
             }

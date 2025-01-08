@@ -3,7 +3,6 @@ const { WebSocketServer } = require('ws');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { useUser } = require('@clerk/clerk-react');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,17 +39,41 @@ app.use(express.static('public', {
 // Store WebSocket to email mapping
 const wsClients = new Map();
 
+// Format display name from email
+const formatDisplayName = (email) => {
+    if (!email) return 'Someone';
+    
+    if (email.endsWith('@realheart.se')) {
+        const [name] = email.split('@');
+        const [firstName, lastName] = name.split('.');
+        if (firstName && lastName) {
+            return `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${lastName.charAt(0).toUpperCase() + lastName.slice(1)}`;
+        }
+    }
+    return email;
+};
+
 // WebSocket connection handling
 wss.on('connection', (ws, req) => {
+    // Get email from URL parameters
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const email = url.searchParams.get('email');
+    const displayName = formatDisplayName(email);
+    console.log(`${displayName} just connected`);
 
-    // Get user email from Clerk
-    const user = req.auth?.userId;
-    if (user && user.emailAddresses && user.emailAddresses.length > 0) {
-        wsClients.set(ws, user.emailAddresses[0].emailAddress);
-    } else {
-        wsClients.set(ws, 'Unknown User');
-    }
-    console.log(`${wsClients.get(ws)} just connected`);
+    // Broadcast connection message
+    const connectionMessage = {
+        type: 'deviceMessage',
+        timestamp: new Date().toISOString(),
+        email: email || 'Unknown User',
+        message: `${displayName} just connected`
+    };
+    
+    wss.clients.forEach((client) => {
+        if (client.readyState === ws.OPEN) {
+            client.send(JSON.stringify(connectionMessage));
+        }
+    });
 
     ws.on('message', (data) => {
         console.log('Raw message received:', data);  
@@ -65,7 +88,7 @@ wss.on('connection', (ws, req) => {
                 const broadcastMessage = {
                     type: 'deviceMessage',
                     timestamp: new Date().toISOString(),
-                    email: wsClients.get(ws) || 'Unknown User',
+                    email: message.email || 'Unknown User',
                     message: message.message
                 };
                 
