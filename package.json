@@ -12,7 +12,9 @@
     "ws": "^8.18.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "pm2 start ecosystem.yml",
+    "stop": "pm2 stop ecosystem.yml",
+    "restart": "pm2 restart ecosystem.yml",
     "dev": "concurrently \"npm:start\" \"vite\"",
     "build": "vite build",
     "preview": "vite preview",

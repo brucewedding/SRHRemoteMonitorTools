@@ -2,7 +2,7 @@ apps:
   - name: RealheartServer
     script: server/server.js    # Path to your server script
     cwd: /var/www/realheartmonitor.live  # Directory where the project lives on the server
-    watch: true         # Enable file watching 
-    ignore_watch: ['node_modules']  # Ignore node_modules
+    watch: false  
     env:
       NODE_ENV: production
+
