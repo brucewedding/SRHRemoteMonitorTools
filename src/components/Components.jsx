@@ -258,7 +258,12 @@ export function createChatModal(isOpen, onClose, onSend, messages = []) {
                         React.createElement('div', { className: 'chat-header opacity-70 text-sm' },
                             msg.username,
                             React.createElement('time', { className: 'ml-2' },
-                                new Date(msg.timestamp).toLocaleTimeString()
+                                new Date(msg.timestamp).toLocaleString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false
+                                })
                             )
                         ),
                         React.createElement('div', { className: 'chat-bubble' }, msg.message)

@@ -15,6 +15,8 @@ import {
 import { UserButton, useUser } from '@clerk/clerk-react';
 
 function CombinedDashboard() {
+    const { user } = useUser();
+
     // State management
     const [viewMode, setViewMode] = React.useState('dashboard');
     const [theme, setTheme] = React.useState('light');
@@ -100,9 +102,6 @@ function CombinedDashboard() {
         LastUpdate: new Date().toLocaleString()
     });
 
-    const { user } = useUser()
-
-
     // Refs
     const wsRef = React.useRef(null);
     const chartManager = React.useRef(new ChartManager());
@@ -120,12 +119,13 @@ function CombinedDashboard() {
     const handleSendMessage = React.useCallback((message) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             const email = user.emailAddresses[0].emailAddress;
-            wsRef.current.send(JSON.stringify({
+            const messageData = {
                 type: 'deviceMessage',
                 message: message,
                 email: user.emailAddresses[0].emailAddress
-            }));
-            // Don't add to local state, we'll receive it back from server
+            };
+            console.log('[Sending Message]:', messageData);
+            wsRef.current.send(JSON.stringify(messageData));
         }
     }, [user]);
 
@@ -160,22 +160,35 @@ function CombinedDashboard() {
     }, [dataUpdateCount, viewMode]);
 
     React.useEffect(() => {
-        const ws = new WebSocket(import.meta.env.VITE_WS_URL);
+        const email = user.emailAddresses[0].emailAddress;
+        const wsUrl = `${import.meta.env.VITE_WS_URL}?email=${encodeURIComponent(email)}`;
+        console.log('[Connecting WebSocket]:', wsUrl);
+        
+        const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         
-        const handleOpen = () => setStatus('Connected');
-        const handleClose = () => setStatus('Disconnected');
+        const handleOpen = () => {
+            console.log('[WebSocket Connected]');
+            setStatus('Connected');
+        };
+        const handleClose = () => {
+            console.log('[WebSocket Disconnected]');
+            setStatus('Disconnected');
+        };
         const handleMessage = (event) => {
             const data = JSON.parse(event.data);
+            console.log('[Received Message]:', data);
             
             if (data.type === 'deviceMessage') 
                 {
-                setMessages(prev => [...prev, { 
+                const messageObj = { 
                     message: data.message,  
                     sender: data.self ? 'user' : 'device',
                     username: data.username,
                     timestamp: data.timestamp || new Date().toISOString()
-                }]);
+                };
+                console.log('[Adding to Messages]:', messageObj);
+                setMessages(prev => [...prev, messageObj]);
                 return;
             }
             
@@ -216,7 +229,7 @@ function CombinedDashboard() {
                 ws.close();
             }
         };
-    }, []);
+    }, [user]);
 
     // Auto-scroll messages when new ones arrive
     React.useEffect(() => {

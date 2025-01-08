@@ -1,8 +1,13 @@
 apps:
   - name: RealheartServer
-    script: server/server.js    # Path to your server script
-    cwd: /var/www/realheartremote.live  # Directory where the project lives on the server
-    watch: false  
-    env:
+    script: server/server.js
+    cwd: /var/www/realheartremote.live
+    watch: false  # Disable watch in production
+    instances: 1
+    exec_mode: fork
+    env_production:
       NODE_ENV: production
-
+      PORT: 3000
+    env_development:
+      NODE_ENV: development
+      PORT: 3000
