@@ -1,0 +1,66 @@
+{
+    "Timestamp":"2025-01-09T08:48:30.0970118Z",
+    "SystemId":"Andreas Gruentzig",
+    "StatusData":{
+        "ExtLeft":{"Text":"OK","Color":"badge-success"},
+        "ExtRight":{"Text":"OK","Color":"badge-success"},
+        "CANStatus":{"Text":"Receiving","Color":"badge-success"},
+        "BytesSent":{"Text":"8","Color":"badge-info"},
+        "BytesRecd":{"Text":"1.61","Color":"badge-info"},
+        "Strokes":{"Text":"0","Color":"badge-info"},
+        "IntLeft":{"Text":"OK","Color":"badge-success"},
+        "IntRight":{"Text":"OK","Color":"badge-success"},
+        "BusLoad":{"Text":"0%","Color":"badge-success"}
+    },
+    "LeftHeart":{
+        "StrokeVolume":"11",
+        "PowerConsumption":
+        {
+            "PrimaryValue":"0.1","SecondaryValue":null,"BackColor":null
+        },  
+        "IntPressure":
+        {
+            "PrimaryValue":"11","SecondaryValue":null,"BackColor":null
+        },
+        "MedicalPressure":
+        {
+            "PrimaryValue":"-","SecondaryValue":null,"BackColor":null
+        },
+        "IntPressureMin":9.19999981,"IntPressureMax":13.7989998,
+        "CardiacOutput":
+        {
+            "PrimaryValue":"0.1","SecondaryValue":null,"BackColor":"#FFFF0000"
+        }
+    },
+    "RightHeart":
+    {
+        "StrokeVolume":"11",
+        "PowerConsumption":{"PrimaryValue":"0.1","SecondaryValue":null,"BackColor":null},
+        "IntPressure":{"PrimaryValue":"5","SecondaryValue":null,"BackColor":null},
+        "MedicalPressure":{"PrimaryValue":"-","SecondaryValue":null,"BackColor":null},"IntPressureMin":0,"IntPressureMax":0,
+        "CardiacOutput":{"PrimaryValue":"0.1","SecondaryValue":null,"BackColor":null}},
+        "HeartRate":"15",
+        "OperationState":"Startup",
+        "HeartStatus":"Both Running",
+        "FlowLimitState":"Keep Constant",
+        "FlowLimit":"9.199",
+        "AtmosPressure":"0",
+        "UseMedicalSensor":false,
+    "AoPSensor":
+    {
+        "PrimaryValue":"-","SecondaryValue":null,"BackColor":null
+    },
+    "CVPSensor":
+    {
+        "PrimaryValue":"-","SecondaryValue":null,"BackColor":null
+    },
+    "PAPSensor":
+    {
+        "PrimaryValue":"-","SecondaryValue":null,"BackColor":null
+    },
+    "ArtPressSensor":
+    {
+        "PrimaryValue":"-","SecondaryValue":null,"BackColor":null
+    },
+    "LocalClock":"09:48:30"
+}
