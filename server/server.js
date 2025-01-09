@@ -29,9 +29,10 @@ const formatDisplayName = (email) => {
 wss.on('connection', (ws, req) => {
     // Get email from URL parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const email = url.searchParams.get('email');
-    const displayName = formatDisplayName(email);
-    console.log(`${displayName} just connected`);
+    const connectionType = url.searchParams.get('type');
+    const displayName = connectionType === 'device' 
+    ? url.searchParams.get('device-name') || 'Unknown Device'
+    : formatDisplayName(url.searchParams.get('email'));
 
     // Broadcast connection message
     const connectionMessage = {
@@ -56,9 +57,9 @@ wss.on('connection', (ws, req) => {
             {
                 // Format the display name from the email
                 const displayName = formatDisplayName(message.email);
-                console.log('\n[Chat Message Processing]');
-                console.log('Email:', message.email);
-                console.log('Formatted name:', displayName);
+                //console.log('\n[Chat Message Processing]');
+                //console.log('Email:', message.email);
+                //console.log('Formatted name:', displayName);
                 
                 // Send to all clients, marking the message as "self" for the sender
                 wss.clients.forEach((client) => {
@@ -71,9 +72,9 @@ wss.on('connection', (ws, req) => {
                             self: client === ws
                         };
                         
-                        console.log('\n[Broadcasting Message]');
-                        console.log('To client:', client === ws ? 'sender' : 'other');
-                        console.log('Message:', JSON.stringify(broadcastMessage, null, 2));
+                        //console.log('\n[Broadcasting Message]');
+                        //console.log('To client:', client === ws ? 'sender' : 'other');
+                        //console.log('Message:', JSON.stringify(broadcastMessage, null, 2));
                         
                         client.send(JSON.stringify(broadcastMessage));
                     }
@@ -82,11 +83,10 @@ wss.on('connection', (ws, req) => {
             else 
             {
                 // Handle regular data updates (broadcast to other clients only)
-                wss.clients.forEach((client) => 
-                {
-                    if (client !== ws && client.readyState === ws.OPEN) 
-                    {
-                        client.send(data.toString());
+                const dataString = data.toString();
+                wss.clients.forEach((client) => {
+                    if (client !== ws && client.readyState === ws.OPEN) {
+                        client.send(dataString);
                     }
                 });
             }
