@@ -5,6 +5,7 @@ import {
     PointElement,
     LinearScale,
     TimeScale,
+    CategoryScale,
     Title,
     Legend,
     Tooltip
@@ -19,6 +20,7 @@ Chart.register(
     PointElement,
     LinearScale,
     TimeScale,
+    CategoryScale,
     Title,
     Legend,
     Tooltip,

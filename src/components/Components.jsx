@@ -212,7 +212,6 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
 }
 
 export function createSensorStatusCard(label, status) {
-    console.log('[createSensorStatusCard] Label:', label, 'Status:', status);
     
     let backgroundColor = 'bg-base-300';
     let statusText = 'Inactive';
@@ -228,19 +227,15 @@ export function createSensorStatusCard(label, status) {
     }
     // Handle object status with Color property (for other status indicators)
     else if (status && typeof status === 'object' && status.Color) {
-        console.log('[createSensorStatusCard] Original Color:', status.Color);
         statusText = status.Text || 'Active';
         statusClass = 'badge-success';
         
         // Extract hex color without alpha channel and add # prefix
         const colorValue = status.Color.replace(/^#?([A-F0-9]{2})?([A-F0-9]{6})$/i, '#$2').toLowerCase();
-        console.log('[createSensorStatusCard] Processed Color:', colorValue);
         backgroundColor = `bg-[${colorValue}] bg-opacity-20`;
-        console.log('[createSensorStatusCard] Final backgroundColor:', backgroundColor);
     }
 
     const className = `card ${backgroundColor} shadow-xl`;
-    console.log('[createSensorStatusCard] Final className:', className);
 
     return React.createElement('div', { className },
       React.createElement('div', { className: 'card-body py-1 px-2' },
