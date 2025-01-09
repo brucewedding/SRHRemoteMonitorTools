@@ -1,5 +1,4 @@
 import React from 'react';
-import { Chart } from 'chart.js/auto';
 
 // Card components for the dashboard
 export function createCard(label, value, color) {
@@ -71,9 +70,6 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
         else 
         {
             displayValue = value || '-';
-            React.createElement('div', { className: 'stat-desc opacity-70' }, 
-                `${formattedMax}/${formattedMin} xxXX`)
-
         }
     } 
     else if (value != null) 
@@ -86,57 +82,41 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     let indicatorText = 'OK'; // default text
     let showIndicator = false;
 
-    if (value && typeof value === 'object' && 'PrimaryValue' in value) {
+    if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
         showIndicator = true;
-
-        if (value.BackColor) {
-            // Extract the color, handling both RGB and ARGB formats, prioritizing 8-char match
-            const colorMatch = value.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
-            if (colorMatch) {
-                const colorCode = colorMatch[1].toUpperCase();
-                // For ARGB format (8 chars), remove the alpha channel (first 2 chars)
-                const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
-                if (mainColor === 'FFFF00') {
-                    indicatorColor = 'bg-warning text-warning-content';
-                    indicatorText = 'OR';
-                } else if (mainColor === 'FF0000') {
-                    indicatorColor = 'bg-error text-error-content';
-                    indicatorText = 'OR';
-                }
-            }
+        const color = value.BackColor.toLowerCase();
+        
+        if (color === 'yellow') {
+            indicatorColor = 'bg-warning text-warning-content';
+            indicatorText = 'OR';
+        } else if (color === 'red') {
+            indicatorColor = 'bg-error text-error-content';
+            indicatorText = 'OR';
         }
     }
 
     // Determine background color based on BackColor if value is an object
-    let cardBgColor = 'bg-base-300 border border-base-300'; // default background and border
+    let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default background and border with consistent width
     
     // Special case for right cardiac output - copy left heart's border color
     if (label === 'Cardiac Out' && value === detailedData?.RightHeart?.CardiacOutput) {
         const leftHeartCardiacOutput = detailedData?.LeftHeart?.CardiacOutput;
         if (leftHeartCardiacOutput?.BackColor) {
-            const colorMatch = leftHeartCardiacOutput.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
-            if (colorMatch) {
-                const colorCode = colorMatch[1].toUpperCase();
-                const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
-                if (mainColor === 'FFFF00') {
-                    cardBgColor = 'border-yellow-500 border-4';
-                } else if (mainColor === 'FF0000') {
-                    cardBgColor = 'border-red-500 border-4';
-                }
+            const color = leftHeartCardiacOutput.BackColor.toLowerCase();
+            if (color === 'yellow') {
+                cardBgColor = 'bg-base-300 border-4 border-yellow-500';
+            } else if (color === 'red') {
+                cardBgColor = 'bg-base-300 border-4 border-red-500';
             }
         }
     } 
     // Normal color determination for other cards
     else if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
-        const colorMatch = value.BackColor.match(/#?([A-F0-9]{8}|[A-F0-9]{6})/i);
-        if (colorMatch) {
-            const colorCode = colorMatch[1].toUpperCase();
-            const mainColor = colorCode.length === 8 ? colorCode.substring(2) : colorCode;
-            if (mainColor === 'FFFF00') {
-                cardBgColor = 'border-yellow-500 border-4';
-            } else if (mainColor === 'FF0000') {
-                cardBgColor = 'border-red-500 border-4';
-            }
+        const color = value.BackColor.toLowerCase();
+        if (color === 'yellow') {
+            cardBgColor = 'bg-base-300 border-4 border-yellow-500';
+        } else if (color === 'red') {
+            cardBgColor = 'bg-base-300 border-4 border-red-500';
         }
     }
 
@@ -181,20 +161,35 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
 
     return React.createElement('div', { 
         className: `stat ${cardBgColor} shadow-xl rounded-xl p-4 relative`
-    }, [mainContent]);
+    }, [mainContent, indicator]);
 }
 
 export function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFile = 'heart.png') {
-    // Extract display value if avgPressure is an object with PrimaryValue
-    const displayValue = avgPressure && typeof avgPressure === 'object' && 'PrimaryValue' in avgPressure 
-        ? avgPressure.PrimaryValue 
-        : avgPressure;
+    // Extract display value and determine border color if avgPressure is an object
+    let displayValue = '-';
+    let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default with consistent border width
+
+    if (avgPressure && typeof avgPressure === 'object') {
+        displayValue = avgPressure.PrimaryValue || '-';
+        
+        // Apply color border based on BackColor property
+        if (avgPressure.BackColor) {
+            const color = avgPressure.BackColor.toLowerCase();
+            if (color === 'yellow') {
+                cardBgColor = 'bg-base-300 border-4 border-yellow-500';
+            } else if (color === 'red') {
+                cardBgColor = 'bg-base-300 border-4 border-red-500';
+            }
+        }
+    } else {
+        displayValue = avgPressure || '-';
+    }
 
     // Round max and min pressure values to 1 decimal place
     const formattedMax = Number(maxPressure).toFixed(1);
     const formattedMin = Number(minPressure).toFixed(1);
 
-    return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4' },
+    return React.createElement('div', { className: `stat ${cardBgColor} shadow-xl rounded-xl p-4` },
         React.createElement('div', { className: 'flex justify-between items-start' },
             React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
                 React.createElement('div', { className: 'stat-title opacity-70' }, label),
@@ -216,13 +211,43 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
     );
 }
 
-export function createSensorStatusCard(label, isActive) {
-    return React.createElement('div', { className: 'card bg-base-300 shadow-xl' },
+export function createSensorStatusCard(label, status) {
+    console.log('[createSensorStatusCard] Label:', label, 'Status:', status);
+    
+    let backgroundColor = 'bg-base-300';
+    let statusText = 'Inactive';
+    let statusClass = 'badge-ghost';
+
+    // Handle boolean status (for Medical/Internal Sensors)
+    if (typeof status === 'boolean') {
+        if (status === true) {
+            backgroundColor = 'bg-success bg-opacity-20';
+            statusText = 'Active';
+            statusClass = 'badge-success';
+        }
+    }
+    // Handle object status with Color property (for other status indicators)
+    else if (status && typeof status === 'object' && status.Color) {
+        console.log('[createSensorStatusCard] Original Color:', status.Color);
+        statusText = status.Text || 'Active';
+        statusClass = 'badge-success';
+        
+        // Extract hex color without alpha channel and add # prefix
+        const colorValue = status.Color.replace(/^#?([A-F0-9]{2})?([A-F0-9]{6})$/i, '#$2').toLowerCase();
+        console.log('[createSensorStatusCard] Processed Color:', colorValue);
+        backgroundColor = `bg-[${colorValue}] bg-opacity-20`;
+        console.log('[createSensorStatusCard] Final backgroundColor:', backgroundColor);
+    }
+
+    const className = `card ${backgroundColor} shadow-xl`;
+    console.log('[createSensorStatusCard] Final className:', className);
+
+    return React.createElement('div', { className },
       React.createElement('div', { className: 'card-body py-1 px-2' },
         React.createElement('div', { className: 'flex items-center justify-between' },
-          React.createElement('h3', { className: 'text-sm sm:text-base' }, label),
-          React.createElement('div', { className: `badge ${isActive ? 'badge-success' : 'badge-ghost'} gap-2` },
-            isActive ? 'Active' : 'Inactive'
+          React.createElement('h3', { className: 'text-sm sm:text-base text-base-content' }, label),
+          React.createElement('div', { className: `badge ${statusClass} gap-2` },
+            statusText
           )
         )
       )
@@ -359,7 +384,7 @@ export function createFooter() {
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 className: 'link link-hover'
-            }, 'Copyright  2024 Scandinavian Real Heart AB')
+            }, 'Copyright  2024 Scandinavian Real Heart AB, Västerås, Sweden')
         )
     );
 }

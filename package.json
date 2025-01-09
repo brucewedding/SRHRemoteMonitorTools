@@ -6,19 +6,16 @@
     "chartjs-plugin-zoom": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
-    "pm2": "^5.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.1.1",
     "ws": "^8.18.0"
   },
   "scripts": {
-    "start": "pm2 start ecosystem.yml --env production",
-    "stop": "pm2 stop ecosystem.yml",
-    "restart": "pm2 restart ecosystem.yml",
-    "dev": "concurrently \"pm2 start ecosystem.yml --env development\" \"vite\"",
+    "start": "node server/server.js",
+    "dev": "concurrently \"node server/server.js\" \"vite\"",
     "build": "vite build",
-    "deploy": "npm run build && ssh root@realheartremote.live \"rm -rf /var/www/realheartremote.live/dist/assets/*\" && scp -r dist/ server/ package.json ecosystem.yml index.html root@realheartremote.live:/var/www/realheartremote.live/",
+    "deploy": "npm run build && ssh root@realheartremote.live \"rm -rf /var/www/realheartremote.live/dist/assets/*\" && scp -r dist/ server/ package.json index.html root@realheartremote.live:/var/www/realheartremote.live/",
     "preview": "vite preview",
     "build:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --watch"
