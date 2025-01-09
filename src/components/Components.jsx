@@ -56,18 +56,28 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     // If value is an object with PrimaryValue, use that
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
         displayValue = value.PrimaryValue || '-';
-    } else if (value != null && typeof value === 'string') {
+    } 
+    else if (value != null && typeof value === 'string') 
+    {
         // If value is a string, try to extract units
         const match = value.match(/^([\d.]+)(\s*L\/min|\s*\w+)?$/);
-        if (match) {
+        if (match) 
+        {
             displayValue = match[1];
             units = match[2] ? 
                 (match[2].includes('L/min') ? 'L/min' : match[2].trim()) : 
                 '';
-        } else {
+        } 
+        else 
+        {
             displayValue = value || '-';
+            React.createElement('div', { className: 'stat-desc opacity-70' }, 
+                `${formattedMax}/${formattedMin} xxXX`)
+
         }
-    } else if (value != null) {
+    } 
+    else if (value != null) 
+    {
         displayValue = String(value);
     }
 
