@@ -84,8 +84,7 @@ wss.on('connection', (ws, req) =>
           process.exit(1);
         }
       });
-    const email = handleWebSocketBehaviors(ws, req);
-
+    
     // Get email from URL parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
     const connectionType = url.searchParams.get('type');
