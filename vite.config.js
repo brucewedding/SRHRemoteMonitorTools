@@ -8,6 +8,7 @@ export default defineConfig({
   build: {
     minify: 'terser',
     outDir: 'dist', // Specify output directory
+    cssCodeSplit: true,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html') // Specify entry point

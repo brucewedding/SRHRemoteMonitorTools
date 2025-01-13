@@ -25,8 +25,67 @@ const formatDisplayName = (email) => {
     return email;
 };
 
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => 
+{
+    console.error('Uncaught Exception:', err);
+    process.exit(1); // This will trigger PM2 to restart the process
+  });
+  
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => 
+{
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+  
+// Optional: Handle SIGTERM signal
+process.on('SIGTERM', () => 
+{
+    console.info('SIGTERM signal received');
+    
+    // Close WebSocket server gracefully
+    wss.close(() => {
+      console.log('WebSocket server closed');
+      
+      // Close HTTP server gracefully
+      server.close(() => {
+        console.log('HTTP server closed');
+        process.exit(0);
+      });
+    });
+    
+    // Force exit if graceful shutdown fails
+    setTimeout(() => 
+    {
+      console.error('Forced shutdown');
+      process.exit(1);
+    }, 10000); // Force shutdown after 10 seconds
+});
+
+function isCriticalError(error) 
+{
+    const criticalErrors = [
+      'ECONNRESET',
+      'EPIPE',
+      'ERR_STREAM_DESTROYED'
+    ];
+    
+    return criticalErrors.includes(error.code);
+  }
+
 // WebSocket connection handling
-wss.on('connection', (ws, req) => {
+wss.on('connection', (ws, req) => 
+{
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+        if (isCriticalError(error)) 
+        {
+          process.exit(1);
+        }
+      });
+    const email = handleWebSocketBehaviors(ws, req);
+
     // Get email from URL parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
     const connectionType = url.searchParams.get('type');
@@ -57,9 +116,6 @@ wss.on('connection', (ws, req) => {
             {
                 // Format the display name from the email
                 const displayName = formatDisplayName(message.email);
-                //console.log('\n[Chat Message Processing]');
-                //console.log('Email:', message.email);
-                //console.log('Formatted name:', displayName);
                 
                 // Send to all clients, marking the message as "self" for the sender
                 wss.clients.forEach((client) => {
@@ -71,11 +127,6 @@ wss.on('connection', (ws, req) => {
                             message: message.message,
                             self: client === ws
                         };
-                        
-                        //console.log('\n[Broadcasting Message]');
-                        //console.log('To client:', client === ws ? 'sender' : 'other');
-                        //console.log('Message:', JSON.stringify(broadcastMessage, null, 2));
-                        
                         client.send(JSON.stringify(broadcastMessage));
                     }
                 });
@@ -113,7 +164,9 @@ wss.on('connection', (ws, req) => {
                         client.send(broadcastString);
                     }
                 });
-            } catch (innerError) {
+            } 
+            catch (innerError) 
+            {
                 console.error('Error broadcasting message:', innerError);
             }
         }
@@ -128,3 +181,22 @@ wss.on('connection', (ws, req) => {
 server.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
+
+function checkCriticalConditions() {
+    // Example: Check memory usage
+    const usedMemory = process.memoryUsage().heapUsed / 1024 / 1024;
+    if (usedMemory > 400) { // More than 400MB since server only has 512MB RAM
+      console.error('Memory threshold exceeded');
+      process.exit(1);
+    }
+    
+    // Example: Check WebSocket connections
+    const clientCount = wss.clients.size;
+    if (clientCount > 100) { // Too many connections
+      console.error('Too many WebSocket connections');
+      process.exit(1);
+    }
+  }
+  
+  // Run checks periodically
+  setInterval(checkCriticalConditions, 60000);

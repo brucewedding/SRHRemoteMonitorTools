@@ -114,8 +114,10 @@ function CombinedDashboard() {
 
     // Callbacks
     const handleThemeToggle = React.useCallback(() => {
-        setTheme(prevTheme => prevTheme === 'light' ? 'business' : 'light');
-    }, []);
+        const newTheme = theme === 'light' ? 'halloween' : 'light';
+        setTheme(newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+    }, [theme]);
 
     const handleViewToggle = React.useCallback(() => {
         setViewMode(prev => prev === 'dashboard' ? 'charts' : 'dashboard');
