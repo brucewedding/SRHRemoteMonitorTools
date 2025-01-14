@@ -213,13 +213,18 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
 
 export function createSensorStatusCard(label, status) {
     
+    console.warn(`[SensorStatusCard] label: ${label}, status: ${status}, type: ${typeof status}`);
+
     let backgroundColor = 'bg-base-300';
     let statusText = 'Inactive';
     let statusClass = 'badge-ghost';
 
     // Handle boolean status (for Medical/Internal Sensors)
-    if (typeof status === 'boolean') {
-        if (status === true) {
+    if (typeof status === 'boolean' || typeof status === 'string') {
+        // Convert string 'true'/'false' to boolean if needed
+        const boolStatus = typeof status === 'string' ? status.toLowerCase() === 'true' : status;
+        console.warn(`[SensorStatusCard] boolStatus: ${boolStatus}, type: ${typeof boolStatus}`);
+        if (boolStatus === true) {
             backgroundColor = 'bg-success bg-opacity-20';
             statusText = 'Active';
             statusClass = 'badge-success';

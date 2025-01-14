@@ -4,14 +4,17 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  root: './', // Explicitly set root directory
+  root: './',
+  base: './', // Add this to ensure proper asset paths
   build: {
     minify: 'terser',
-    outDir: 'dist', // Specify output directory
+    outDir: 'dist',
     cssCodeSplit: true,
+    emptyOutDir: true, // Add this to ensure clean builds
+    sourcemap: true, // Add for debugging
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html') // Specify entry point
+        main: path.resolve(__dirname, 'index.html')
       },
       output: {
         format: 'es',

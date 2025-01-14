@@ -78,7 +78,6 @@ function CombinedDashboard() {
         FlowLimitState: '',
         FlowLimit: '0',
         UseMedicalSensor: false,
-        UseInternalSensor: true,
         CVPSensor: {
             Name: '',
             PrimaryValue: '0',
@@ -139,7 +138,6 @@ function CombinedDashboard() {
 
         const email = user.emailAddresses[0].emailAddress;
         const wsUrl = `${import.meta.env.VITE_WS_URL}?email=${encodeURIComponent(email)}`;
-        console.log('[Connecting WebSocket]:', wsUrl);
 
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -162,77 +160,93 @@ function CombinedDashboard() {
         };
 
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-
-            if (data.type === 'systemMessage') {
-                addMessage({
-                    message: data.message,
-                    timestamp: new Date().toLocaleTimeString(),
-                    type: 'system'
+            console.warn('[WebSocket Message]:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                console.warn('[Parsed Data]:', {
+                    type: data.type,
+                    UseMedicalSensor: data.UseMedicalSensor,
+                    typeOf: typeof data.UseMedicalSensor
                 });
-                return;
-            }
 
-            if (data.type === 'deviceMessage') {
-                addMessage({
-                    message: data.message,
-                    timestamp: new Date().toLocaleTimeString(),
-                    email: data.email,
-                    type: 'user'
+                if (data.type === 'systemMessage') {
+                    addMessage({
+                        message: data.message,
+                        timestamp: new Date().toLocaleTimeString(),
+                        type: 'system'
+                    });
+                    return;
+                }
+
+                if (data.type === 'deviceMessage') {
+                    addMessage({
+                        message: data.message,
+                        timestamp: new Date().toLocaleTimeString(),
+                        email: data.email,
+                        type: 'user'
+                    });
+                    return;
+                }
+
+                if (data.systemId) {
+                    setSystemId(data.systemId);
+                }
+
+                setDetailedData(prevData => {
+                    console.warn('[State Update] UseMedicalSensor:', data.UseMedicalSensor, '[type:', typeof data.UseMedicalSensor, ']');
+                    return {
+                        ...prevData,
+                        StatusData: {
+                            ExtLeft: data.StatusData?.ExtLeft || prevData.StatusData.ExtLeft,
+                            ExtRight: data.StatusData?.ExtRight || prevData.StatusData.ExtRight,
+                            IntLeft: data.StatusData?.IntLeft || prevData.StatusData.IntLeft,
+                            IntRight: data.StatusData?.IntRight || prevData.StatusData.IntRight,
+                            CANStatus: data.StatusData?.CANStatus || prevData.StatusData.CANStatus,
+                            BytesSent: data.StatusData?.BytesSent || prevData.StatusData.BytesSent,
+                            BytesRecd: data.StatusData?.BytesRecd || prevData.StatusData.BytesRecd,
+                            Strokes: data.StatusData?.Strokes || prevData.StatusData.Strokes,
+                            BusLoad: data.StatusData?.BusLoad || prevData.StatusData.BusLoad
+                        },
+                        LeftHeart: {
+                            StrokeVolume: data.LeftHeart?.StrokeVolume || prevData.LeftHeart.StrokeVolume,
+                            PowerConsumption: data.LeftHeart?.PowerConsumption || prevData.LeftHeart.PowerConsumption,
+                            IntPressure: data.LeftHeart?.IntPressure || prevData.LeftHeart.IntPressure,
+                            IntPressureMin: data.LeftHeart?.IntPressureMin || prevData.LeftHeart.IntPressureMin,
+                            IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
+                            AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
+                            CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
+                            MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure
+                        },
+                        RightHeart: {
+                            StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
+                            PowerConsumption: data.RightHeart?.PowerConsumption || prevData.RightHeart.PowerConsumption,
+                            IntPressure: data.RightHeart?.IntPressure || prevData.RightHeart.IntPressure,
+                            IntPressureMin: data.RightHeart?.IntPressureMin || prevData.RightHeart.IntPressureMin,
+                            IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
+                            AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
+                            CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
+                            MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure
+                        },
+                        HeartRate: data.HeartRate || prevData.HeartRate,
+                        CVPSensor: data.CVPSensor || prevData.CVPSensor,
+                        PAPSensor: data.PAPSensor || prevData.PAPSensor,
+                        AoPSensor: data.AoPSensor || prevData.AoPSensor,
+                        ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
+                        OperationState: data.OperationState || prevData.OperationState,
+                        HeartStatus: data.HeartStatus || prevData.HeartStatus,
+                        UseMedicalSensor: data.UseMedicalSensor !== undefined ? 
+                            (data.UseMedicalSensor === true || data.UseMedicalSensor === 'true') : 
+                            prevData.UseMedicalSensor,
+                        LastUpdate: new Date().toLocaleTimeString()
+                    };
                 });
-                return;
-            }
 
-            if (data.systemId) {
-                setSystemId(data.systemId);
-            }
-
-            setDetailedData(prevData => ({
-                ...prevData,
-                StatusData: {
-                    ExtLeft: data.StatusData?.ExtLeft || prevData.StatusData.ExtLeft,
-                    ExtRight: data.StatusData?.ExtRight || prevData.StatusData.ExtRight,
-                    IntLeft: data.StatusData?.IntLeft || prevData.StatusData.IntLeft,
-                    IntRight: data.StatusData?.IntRight || prevData.StatusData.IntRight,
-                    CANStatus: data.StatusData?.CANStatus || prevData.StatusData.CANStatus,
-                    BytesSent: data.StatusData?.BytesSent || prevData.StatusData.BytesSent,
-                    BytesRecd: data.StatusData?.BytesRecd || prevData.StatusData.BytesRecd,
-                    Strokes: data.StatusData?.Strokes || prevData.StatusData.Strokes,
-                    BusLoad: data.StatusData?.BusLoad || prevData.StatusData.BusLoad
-                },
-                LeftHeart: {
-                    StrokeVolume: data.LeftHeart?.StrokeVolume || prevData.LeftHeart.StrokeVolume,
-                    PowerConsumption: data.LeftHeart?.PowerConsumption || prevData.LeftHeart.PowerConsumption,
-                    IntPressure: data.LeftHeart?.IntPressure || prevData.LeftHeart.IntPressure,
-                    IntPressureMin: data.LeftHeart?.IntPressureMin || prevData.LeftHeart.IntPressureMin,
-                    IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
-                    AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
-                    CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
-                    MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure
-                },
-                RightHeart: {
-                    StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
-                    PowerConsumption: data.RightHeart?.PowerConsumption || prevData.RightHeart.PowerConsumption,
-                    IntPressure: data.RightHeart?.IntPressure || prevData.RightHeart.IntPressure,
-                    IntPressureMin: data.RightHeart?.IntPressureMin || prevData.RightHeart.IntPressureMin,
-                    IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
-                    AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
-                    CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
-                    MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure
-                },
-                HeartRate: data.HeartRate || prevData.HeartRate,
-                CVPSensor: data.CVPSensor || prevData.CVPSensor,
-                PAPSensor: data.PAPSensor || prevData.PAPSensor,
-                AoPSensor: data.AoPSensor || prevData.AoPSensor,
-                ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
-                OperationState: data.OperationState || prevData.OperationState,
-                HeartStatus: data.HeartStatus || prevData.HeartStatus,
-                LastUpdate: new Date().toLocaleTimeString()
-            }));
-
-            if (chartManager.current) {
-                chartManager.current.updateStoredChartData(data);
-                setDataUpdateCount(count => count + 1);
+                if (chartManager.current) {
+                    chartManager.current.updateStoredChartData(data);
+                    setDataUpdateCount(count => count + 1);
+                }
+            } catch (error) {
+                console.error('[WebSocket Error Parsing Data]:', error);
             }
         };
     }, [user, addMessage, setSystemId]);
@@ -274,7 +288,6 @@ function CombinedDashboard() {
                 email: user.emailAddresses[0].emailAddress
             };
 
-            //console.log('[Sending Message]:', messageData);
             wsRef.current.send(JSON.stringify(messageData));
         }
     }, [user]);
@@ -319,6 +332,10 @@ function CombinedDashboard() {
         }
     }, [messages, isChatOpen]);
 
+    // Track detailedData changes
+    React.useEffect(() => {
+    }, [detailedData]);
+
     // Helper function to strip alpha channel from hex color
     const stripAlphaChannel = (hexColor) => {
         // If the color starts with 0xFF, remove it and return the remaining 6 characters
@@ -343,7 +360,7 @@ function CombinedDashboard() {
                             createCard('Heart Status', detailedData.HeartStatus, 'green'),
                             React.createElement('div', { className: 'grid grid-rows-2 gap-2 py-1' },
                                 createSensorStatusCard('Medical Sensors', detailedData.UseMedicalSensor),
-                                createSensorStatusCard('Internal Sensors', detailedData.UseInternalSensor)
+                                createSensorStatusCard('Internal Sensors', !detailedData.UseMedicalSensor)
                             )
                         ),
                         React.createElement('div', { className: 'flex justify-between items-start mt-2 mb-2 flex-wrap gap-2' },

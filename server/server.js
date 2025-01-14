@@ -88,9 +88,21 @@ wss.on('connection', (ws, req) =>
     // Get email from URL parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
     const connectionType = url.searchParams.get('type');
-    const displayName = connectionType === 'device' 
-    ? url.searchParams.get('device-name') || 'Unknown Device'
-    : formatDisplayName(url.searchParams.get('email'));
+    let displayName;
+    
+    if (connectionType === 'device') {
+        // Get raw device name and clean it up
+        const rawDeviceName = url.searchParams.get('device-name') || 'Unknown Device';
+        // Remove any query parameters and decode URI components
+        displayName = decodeURIComponent(rawDeviceName).split('?')[0].trim();
+        
+        // Store the SystemId in wsClients map
+        wsClients.set(ws, url.searchParams.get('SystemId'));
+    } else {
+        displayName = formatDisplayName(url.searchParams.get('email'));
+        // Store the email in wsClients map
+        wsClients.set(ws, url.searchParams.get('email'));
+    }
 
     // Broadcast connection message
     const connectionMessage = {
@@ -109,7 +121,7 @@ wss.on('connection', (ws, req) =>
     ws.on('message', (data) => {
         try {
             const message = JSON.parse(data.toString());
-            const dataString = data.toString();
+            let dataString = data.toString();
 
             // Handle device messages differently from data updates
             if (message?.type === 'deviceMessage') 
@@ -157,13 +169,18 @@ wss.on('connection', (ws, req) =>
             }
             else 
             {
-                console.log(dataString);
-
                 // Handle other data updates (broadcast to other clients only)
                 wss.clients.forEach((client) => {
                     if (client !== ws && client.readyState === ws.OPEN) {
-                        // Send the original data first
-                        client.send(dataString);
+                        // Ensure UseMedicalSensor is boolean before sending
+                        let dataToSend = dataString;
+                        if (message.UseMedicalSensor !== undefined) {
+                            const modifiedMessage = { ...message };
+                            modifiedMessage.UseMedicalSensor = modifiedMessage.UseMedicalSensor === true || modifiedMessage.UseMedicalSensor === 'true';
+                            dataToSend = JSON.stringify(modifiedMessage);
+                        }
+                        // Send the data
+                        client.send(dataToSend);
                         
                         // If there are messages in the data, send them separately
                         if (message.Messages && Array.isArray(message.Messages)) {
