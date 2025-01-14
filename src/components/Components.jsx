@@ -10,7 +10,7 @@ export function createCard(label, value, color) {
     );
 }
 
-export function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-content', detailedData = null) {
+export function createDetailCard(label, value, iconFile = 'heart.png', color = 'base-content', detailedData = null, units = '') {
     // Special case for Flow State - move value to description and set value based on state
     if (label === 'Flow State') {
         let stateValue = '';
@@ -50,7 +50,7 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
 
     // Extract display value and units
     let displayValue = '-';
-    let units = '';
+    let unitsValue = units;  // Store the passed-in units
 
     // If value is an object with PrimaryValue, use that
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
@@ -58,14 +58,20 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     } 
     else if (value != null && typeof value === 'string') 
     {
-        // If value is a string, try to extract units
-        const match = value.match(/^([\d.]+)(\s*L\/min|\s*\w+)?$/);
+        // Try to extract value and units from string
+        const match = value.match(/^([\d.]+)(\s*(?:L\/min|mL|mm|\w+))?$/);
         if (match) 
         {
             displayValue = match[1];
-            units = match[2] ? 
-                (match[2].includes('L/min') ? 'L/min' : match[2].trim()) : 
-                '';
+            // Only use extracted units if no units were passed in
+            if (!unitsValue) {
+                unitsValue = match[2] ? 
+                    (match[2].includes('L/min') ? 'L/min' : 
+                     match[2].includes('mL') ? 'mL' : 
+                     match[2].includes('mm') ? 'mm' :
+                     match[2].trim()) : 
+                    '';
+            }
         } 
         else 
         {
@@ -78,21 +84,23 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     }
 
     // Determine indicator state based on BackColor if value is an object
-    let indicatorColor = 'bg-success text-success-content'; // default state
-    let indicatorText = 'OK'; // default text
+    let indicatorColor = 'bg-success text-success-content';
+    let indicatorText = 'OK';
     let showIndicator = false;
 
     if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
-        showIndicator = true;
         const color = value.BackColor.toLowerCase();
         
         if (color === 'yellow') {
+            showIndicator = true;
             indicatorColor = 'bg-warning text-warning-content';
             indicatorText = 'OR';
         } else if (color === 'red') {
+            showIndicator = true;
             indicatorColor = 'bg-error text-error-content';
             indicatorText = 'OR';
         }
+        // No indicator for 'default' or any other color
     }
 
     // Determine background color based on BackColor if value is an object
@@ -136,10 +144,10 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
                 key: 'value',
                 className: `stat-value text-${color}` 
             }, displayValue),
-            units && React.createElement('div', { 
+            unitsValue && React.createElement('div', { 
                 key: 'units',
                 className: 'stat-desc opacity-70' 
-            }, units)
+            }, unitsValue)
         ].filter(Boolean)),
         React.createElement('div', { 
             key: 'icon',

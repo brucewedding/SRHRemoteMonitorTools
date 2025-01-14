@@ -444,17 +444,17 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                            createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
+                            createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
                             createPressureCard('Int Press', detailedData.LeftHeart.IntPressure, detailedData.LeftHeart.IntPressureMax, detailedData.LeftHeart.IntPressureMin, 'pressure.png'),
 
-                            createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
+                            createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
+                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'power.png', 'base-content', detailedData, 'W')
 
                         )
 
@@ -469,17 +469,17 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                            createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
+                            createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
                             createPressureCard('Int Press', detailedData.RightHeart.IntPressure, detailedData.RightHeart.IntPressureMax, detailedData.RightHeart.IntPressureMin, 'pressure.png'),
 
-                            createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
+                            createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
+                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'power.png', 'base-content', detailedData, 'W')
 
                         )
 
@@ -494,13 +494,13 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' },
-                            createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('AoP', detailedData.AoPSensor, 'pressure.png', 'base-content', detailedData),
+                            createDetailCard('AoP', detailedData.AoPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData)
+                            createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData, 'mmHg')
 
                         )
 
@@ -515,7 +515,7 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Flow Status'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
-                            createDetailCard('Flow Lmt', detailedData.FlowLimit, 'flow.png', 'base-content', detailedData),
+                            createDetailCard('Flow Lmt', detailedData.FlowLimit, 'flow.png', 'base-content', detailedData, 'L/min'),
 
                             createDetailCard('Flow State', detailedData.FlowLimitState, 'flow.png', 'base-content', detailedData)
 
