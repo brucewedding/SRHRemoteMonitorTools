@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChartManager } from '../../utils/ChartManager';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import MessageLog from '../../components/MessageLog';
 import {
     createCard,
     createDetailCard,
@@ -18,6 +19,7 @@ function CombinedDashboard() {
     const { user } = useUser();
 
     // State management
+    const MAX_MESSAGES = 100;
     const [viewMode, setViewMode] = React.useState('dashboard');
     const [theme, setTheme] = React.useState('light');
     const [isChatOpen, setIsChatOpen] = React.useState(false);
@@ -113,6 +115,146 @@ function CombinedDashboard() {
     const chartInitializedRef = React.useRef(false);
 
     // Callbacks
+    const addMessage = React.useCallback((newMessage) => {
+        setMessages(currentMessages => {
+            const updatedMessages = [newMessage, ...currentMessages];
+            return updatedMessages.slice(0, MAX_MESSAGES);
+        });
+    }, []);
+
+    // WebSocket handlers
+    const handleDisconnect = React.useCallback(() => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.close();
+            wsRef.current = null;  // Clear the reference after closing
+        }
+    }, []);
+
+    const handleConnect = React.useCallback(() => {
+        // Clean up any existing connection first
+        if (wsRef.current) {
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+
+        const email = user.emailAddresses[0].emailAddress;
+        const wsUrl = `${import.meta.env.VITE_WS_URL}?email=${encodeURIComponent(email)}`;
+        console.log('[Connecting WebSocket]:', wsUrl);
+
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            console.log('[WebSocket Connected]');
+            setStatus('Connected');
+        };
+
+        ws.onclose = () => {
+            console.log('[WebSocket Disconnected]');
+            setStatus('Disconnected');
+            wsRef.current = null;  // Clear the reference when connection closes
+        };
+
+        ws.onerror = (error) => {
+            console.error('[WebSocket Error]:', error);
+            setStatus('Error');
+            wsRef.current = null;  // Clear the reference on error
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'systemMessage') {
+                addMessage({
+                    message: data.message,
+                    timestamp: new Date().toLocaleTimeString(),
+                    type: 'system'
+                });
+                return;
+            }
+
+            if (data.type === 'deviceMessage') {
+                addMessage({
+                    message: data.message,
+                    timestamp: new Date().toLocaleTimeString(),
+                    email: data.email,
+                    type: 'user'
+                });
+                return;
+            }
+
+            if (data.systemId) {
+                setSystemId(data.systemId);
+            }
+
+            setDetailedData(prevData => ({
+                ...prevData,
+                StatusData: {
+                    ExtLeft: data.StatusData?.ExtLeft || prevData.StatusData.ExtLeft,
+                    ExtRight: data.StatusData?.ExtRight || prevData.StatusData.ExtRight,
+                    IntLeft: data.StatusData?.IntLeft || prevData.StatusData.IntLeft,
+                    IntRight: data.StatusData?.IntRight || prevData.StatusData.IntRight,
+                    CANStatus: data.StatusData?.CANStatus || prevData.StatusData.CANStatus,
+                    BytesSent: data.StatusData?.BytesSent || prevData.StatusData.BytesSent,
+                    BytesRecd: data.StatusData?.BytesRecd || prevData.StatusData.BytesRecd,
+                    Strokes: data.StatusData?.Strokes || prevData.StatusData.Strokes,
+                    BusLoad: data.StatusData?.BusLoad || prevData.StatusData.BusLoad
+                },
+                LeftHeart: {
+                    StrokeVolume: data.LeftHeart?.StrokeVolume || prevData.LeftHeart.StrokeVolume,
+                    PowerConsumption: data.LeftHeart?.PowerConsumption || prevData.LeftHeart.PowerConsumption,
+                    IntPressure: data.LeftHeart?.IntPressure || prevData.LeftHeart.IntPressure,
+                    IntPressureMin: data.LeftHeart?.IntPressureMin || prevData.LeftHeart.IntPressureMin,
+                    IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
+                    AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
+                    CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
+                    MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure
+                },
+                RightHeart: {
+                    StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
+                    PowerConsumption: data.RightHeart?.PowerConsumption || prevData.RightHeart.PowerConsumption,
+                    IntPressure: data.RightHeart?.IntPressure || prevData.RightHeart.IntPressure,
+                    IntPressureMin: data.RightHeart?.IntPressureMin || prevData.RightHeart.IntPressureMin,
+                    IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
+                    AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
+                    CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
+                    MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure
+                },
+                HeartRate: data.HeartRate || prevData.HeartRate,
+                CVPSensor: data.CVPSensor || prevData.CVPSensor,
+                PAPSensor: data.PAPSensor || prevData.PAPSensor,
+                AoPSensor: data.AoPSensor || prevData.AoPSensor,
+                ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
+                OperationState: data.OperationState || prevData.OperationState,
+                HeartStatus: data.HeartStatus || prevData.HeartStatus,
+                LastUpdate: new Date().toLocaleTimeString()
+            }));
+
+            if (chartManager.current) {
+                chartManager.current.updateStoredChartData(data);
+                setDataUpdateCount(count => count + 1);
+            }
+        };
+    }, [user, addMessage, setSystemId]);
+
+    const handleStatusClick = React.useCallback(() => {
+        if (status === 'Connected') {
+            handleDisconnect();
+        } else {
+            handleConnect();
+        }
+    }, [status, handleConnect, handleDisconnect]);
+
+    // Effects
+    React.useEffect(() => {
+        handleConnect();
+        return () => {
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
+            }
+        };
+    }, [handleConnect]);
+
     const handleThemeToggle = React.useCallback(() => {
         const newTheme = theme === 'light' ? 'halloween' : 'light';
         setTheme(newTheme);
@@ -167,77 +309,6 @@ function CombinedDashboard() {
         }
     }, [dataUpdateCount, viewMode]);
 
-    React.useEffect(() => {
-        const email = user.emailAddresses[0].emailAddress;
-        const wsUrl = `${import.meta.env.VITE_WS_URL}?email=${encodeURIComponent(email)}`;
-        console.log('[Connecting WebSocket]:', wsUrl);
-
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-        const handleOpen = () => {
-            console.log('[WebSocket Connected]');
-            setStatus('Connected');
-        };
-
-        const handleClose = () => {
-            console.log('[WebSocket Disconnected]');
-            setStatus('Disconnected');
-        };
-
-        const handleMessage = (event) => {
-            const data = JSON.parse(event.data);
-
-           if (data.type === 'deviceMessage') 
-                {
-                const messageObj = { 
-                    message: data.message,  
-                    sender: data.self ? 'user' : 'device',
-                    username: data.username,
-                    timestamp: data.timestamp || new Date().toISOString()
-                };
-
-                setMessages(prev => [...prev, messageObj]);
-                return;
-            }
-
-            if (data.SystemId) {
-                setSystemId(data.SystemId);
-            }
-
-            setDetailedData(prevData => ({
-                ...prevData,
-                StatusData: data.StatusData || prevData.StatusData,
-                LeftHeart: data.LeftHeart || prevData.LeftHeart,
-                RightHeart: data.RightHeart || prevData.RightHeart,
-                HeartRate: data.HeartRate || prevData.HeartRate,
-                CVPSensor: data.CVPSensor || prevData.CVPSensor,
-                PAPSensor: data.PAPSensor || prevData.PAPSensor,
-                AoPSensor: data.AoPSensor || prevData.AoPSensor,
-                ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
-                OperationState: data.OperationState || prevData.OperationState,
-                HeartStatus: data.HeartStatus || prevData.HeartStatus,
-                LastUpdate: new Date().toLocaleTimeString()
-            }));
-
-            if (chartManager.current) {
-                chartManager.current.updateStoredChartData(data);
-                setDataUpdateCount(count => count + 1);
-            }
-        };
-
-        ws.addEventListener('open', handleOpen);
-        ws.addEventListener('close', handleClose);
-        ws.addEventListener('message', handleMessage);
-        return () => {
-            ws.removeEventListener('open', handleOpen);
-            ws.removeEventListener('close', handleClose);
-            ws.removeEventListener('message', handleMessage);
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
-        };
-    }, [user]);
-
     // Auto-scroll messages when new ones arrive
     React.useEffect(() => {
         if (isChatOpen) {
@@ -259,187 +330,186 @@ function CombinedDashboard() {
 
     // Render functions
     function renderDashboard() {
-        return React.createElement('div', null,
-            // Status Cards
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mt-1 mb-1 p-0' },
-                React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
-                    React.createElement('h2', { className: 'card-title opacity-80 mt-0  py-0' }, 'System Status'),
+        return React.createElement(React.Fragment, null,
+            React.createElement('div', { className: 'max-w-7xl mx-auto' },  
+                // Status Cards
+                React.createElement('div', { className: 'card bg-base-200 shadow-xl mt-1 mb-1 p-0' },
+                    React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
+                        React.createElement('h2', { className: 'card-title opacity-80 mt-0  py-0' }, 'System Status'),
 
-                    React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 gap-4' },
-                        createCard('Heart Rate', `${detailedData.HeartRate} BPM`, 'red'),
-                        createCard('Operation State', detailedData.OperationState, 'blue'),
-                        createCard('Heart Status', detailedData.HeartStatus, 'green'),
-                        React.createElement('div', { className: 'grid grid-rows-2 gap-2 py-1' },
-                            createSensorStatusCard('Medical Sensors', detailedData.UseMedicalSensor),
-                            createSensorStatusCard('Internal Sensors', detailedData.UseInternalSensor)
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 gap-4' },
+                            createCard('Heart Rate', `${detailedData.HeartRate} BPM`, 'red'),
+                            createCard('Operation State', detailedData.OperationState, 'blue'),
+                            createCard('Heart Status', detailedData.HeartStatus, 'green'),
+                            React.createElement('div', { className: 'grid grid-rows-2 gap-2 py-1' },
+                                createSensorStatusCard('Medical Sensors', detailedData.UseMedicalSensor),
+                                createSensorStatusCard('Internal Sensors', detailedData.UseInternalSensor)
+                            )
+                        ),
+                        React.createElement('div', { className: 'flex justify-between items-start mt-2 mb-2 flex-wrap gap-2' },
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { 
+                                    className: 'badge w-full text-center',
+                                    style: { 
+                                        backgroundColor: stripAlphaChannel(detailedData.StatusData.ExtLeft.Color),
+                                        color: '#000000'
+                                    }
+                                }, detailedData.StatusData.ExtLeft.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Ext L')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { 
+                                    className: 'badge w-full text-center',
+                                    style: { 
+                                        backgroundColor: stripAlphaChannel(detailedData.StatusData.ExtRight.Color),
+                                        color: '#000000'
+                                    }
+                                }, detailedData.StatusData.ExtRight.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Ext R')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { 
+                                    className: 'badge w-full text-center',
+                                    style: { 
+                                        backgroundColor: stripAlphaChannel(detailedData.StatusData.IntLeft.Color),
+                                        color: '#000000'
+                                    }
+                                }, detailedData.StatusData.IntLeft.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Int Lt')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { 
+                                    className: 'badge w-full text-center',
+                                    style: { 
+                                        backgroundColor: stripAlphaChannel(detailedData.StatusData.IntRight.Color),
+                                        color: '#000000'
+                                    }
+                                }, detailedData.StatusData.IntRight.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Int Rt')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { className: `badge ${detailedData.StatusData.Strokes.Color} w-full text-center` }, detailedData.StatusData.Strokes.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Strokes')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { className: `badge ${detailedData.StatusData.BytesSent.Color} w-full text-center` }, detailedData.StatusData.BytesSent.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Sent')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { className: `badge ${detailedData.StatusData.BytesRecd.Color} w-full text-center` }, detailedData.StatusData.BytesRecd.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'MB Rec')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { className: `badge ${detailedData.StatusData.CANStatus.Color} w-full text-center` }, detailedData.StatusData.CANStatus.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'CAN')
+                            ),
+                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                                React.createElement('span', { 
+                                    className: 'badge w-full text-center',
+                                    style: { 
+                                        backgroundColor: stripAlphaChannel(detailedData.StatusData.BusLoad.Color),
+                                        color: '#000000'
+                                    }
+                                }, detailedData.StatusData.BusLoad.Text),
+                                React.createElement('span', { className: 'text-xs mt-1' }, 'Bus Load')
+                            )
+
                         )
-                    ),
-                    React.createElement('div', { className: 'flex justify-between items-start mt-2 mb-2 flex-wrap gap-2' },
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { 
-                                className: 'badge w-full text-center',
-                                style: { 
-                                    backgroundColor: stripAlphaChannel(detailedData.StatusData.ExtLeft.Color),
-                                    color: '#000000'
-                                }
-                            }, detailedData.StatusData.ExtLeft.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Ext L')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { 
-                                className: 'badge w-full text-center',
-                                style: { 
-                                    backgroundColor: stripAlphaChannel(detailedData.StatusData.ExtRight.Color),
-                                    color: '#000000'
-                                }
-                            }, detailedData.StatusData.ExtRight.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Ext R')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { 
-                                className: 'badge w-full text-center',
-                                style: { 
-                                    backgroundColor: stripAlphaChannel(detailedData.StatusData.IntLeft.Color),
-                                    color: '#000000'
-                                }
-                            }, detailedData.StatusData.IntLeft.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Int Lt')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { 
-                                className: 'badge w-full text-center',
-                                style: { 
-                                    backgroundColor: stripAlphaChannel(detailedData.StatusData.IntRight.Color),
-                                    color: '#000000'
-                                }
-                            }, detailedData.StatusData.IntRight.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Int Rt')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { className: `badge ${detailedData.StatusData.Strokes.Color} w-full text-center` }, detailedData.StatusData.Strokes.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Strokes')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { className: `badge ${detailedData.StatusData.BytesSent.Color} w-full text-center` }, detailedData.StatusData.BytesSent.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Sent')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { className: `badge ${detailedData.StatusData.BytesRecd.Color} w-full text-center` }, detailedData.StatusData.BytesRecd.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'MB Rec')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { className: `badge ${detailedData.StatusData.CANStatus.Color} w-full text-center` }, detailedData.StatusData.CANStatus.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'CAN')
-                        ),
-                        React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                            React.createElement('span', { 
-                                className: 'badge w-full text-center',
-                                style: { 
-                                    backgroundColor: stripAlphaChannel(detailedData.StatusData.BusLoad.Color),
-                                    color: '#000000'
-                                }
-                            }, detailedData.StatusData.BusLoad.Text),
-                            React.createElement('span', { className: 'text-xs mt-1' }, 'Bus Load')
+
+                    )
+
+                ),
+
+                // Left Heart Data
+
+                React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
+                    React.createElement('div', { className: 'card-body py-1 px-1.5' },
+                        React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
+
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
+                            createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
+
+                            createPressureCard('Int Press', detailedData.LeftHeart.IntPressure, detailedData.LeftHeart.IntPressureMax, detailedData.LeftHeart.IntPressureMin, 'pressure.png'),
+
+                            createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
+
+                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
+
+                        )
+
+                    )
+
+                ),
+
+                // Right Heart Data
+
+                React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
+                    React.createElement('div', { className: 'card-body px-1.5 py-1' },
+                        React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
+
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
+                            createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
+
+                            createPressureCard('Int Press', detailedData.RightHeart.IntPressure, detailedData.RightHeart.IntPressureMax, detailedData.RightHeart.IntPressureMin, 'pressure.png'),
+
+                            createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
+
+                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
+
+                        )
+
+                    )
+
+                ),
+
+                // Pressure Data
+
+                React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
+                    React.createElement('div', { className: 'card-body px-1.5 py-1' },
+                        React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
+
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' },
+                            createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('AoP', detailedData.AoPSensor, 'pressure.png', 'base-content', detailedData),
+
+                            createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData)
+
+                        )
+
+                    )
+
+                ),
+
+                // Flow Info
+
+                React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
+                    React.createElement('div', { className: 'card-body py-1 px-1.5' },
+                        React.createElement('h2', { className: 'card-title opacity-80' }, 'Flow Status'),
+
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
+                            createDetailCard('Flow Lmt', detailedData.FlowLimit, 'flow.png', 'base-content', detailedData),
+
+                            createDetailCard('Flow State', detailedData.FlowLimitState, 'flow.png', 'base-content', detailedData)
+
                         )
 
                     )
 
                 )
-
-            ),
-
-            // Left Heart Data
-
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body py-1 px-1.5' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
-
-                    React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                        createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
-
-                        createPressureCard('Int Press', detailedData.LeftHeart.IntPressure, detailedData.LeftHeart.IntPressureMax, detailedData.LeftHeart.IntPressureMin, 'pressure.png'),
-
-                        createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
-
-                        createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
-
-                    )
-
-                )
-
-            ),
-
-            // Right Heart Data
-
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body px-1.5 py-1' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
-
-                    React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                        createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData),
-
-                        createPressureCard('Int Press', detailedData.RightHeart.IntPressure, detailedData.RightHeart.IntPressureMax, detailedData.RightHeart.IntPressureMin, 'pressure.png'),
-
-                        createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData),
-
-                        createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'power.png', 'base-content', detailedData)
-
-                    )
-
-                )
-
-            ),
-
-            // Pressure Data
-
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body px-1.5 py-1' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
-
-                    React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' },
-                        createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('AoP', detailedData.AoPSensor, 'pressure.png', 'base-content', detailedData),
-
-                        createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData)
-
-                    )
-
-                )
-
-            ),
-
-            // Flow Info
-
-            React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                React.createElement('div', { className: 'card-body py-1 px-1.5' },
-                    React.createElement('h2', { className: 'card-title opacity-80' }, 'Flow Status'),
-
-                    React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
-                        createDetailCard('Flow Lmt', detailedData.FlowLimit, 'flow.png', 'base-content', detailedData),
-
-                        createDetailCard('Flow State', detailedData.FlowLimitState, 'flow.png', 'base-content', detailedData)
-
-                    )
-
-                )
-
             )
-
         );
-
     }
-
 
     function renderCharts() {
 
@@ -532,13 +602,10 @@ function CombinedDashboard() {
 
     }
 
-
-    // Component render
-
     return React.createElement('div', { className: 'container mx-auto p-4 max-w-7xl' },
         React.createElement('div', { className: 'flex items-center justify-between mb-4' },
             React.createElement('div', { className: 'flex-1' },
-                createHeader(status, detailedData.LastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true), systemId)
+                createHeader(status, detailedData.LastUpdate, viewMode === 'charts', handleViewToggle, theme, () => setIsChatOpen(true), systemId, handleStatusClick)
             ),
             React.createElement(ThemeToggle, {
                 theme: theme,
@@ -546,7 +613,17 @@ function CombinedDashboard() {
             })
         ),
         React.createElement('div', { className: 'pb-16' },
-            viewMode === 'dashboard' ? renderDashboard() : renderCharts()
+            viewMode === 'dashboard' ? (
+                React.createElement(React.Fragment, null,
+                    renderDashboard(),
+                    React.createElement('div', { className: 'card bg-base-200 shadow-xl mt-4' },
+                        React.createElement('div', { className: 'card-body' },
+                            React.createElement('h2', { className: 'card-title' }, 'System Messages'),
+                            React.createElement(MessageLog, { messages: messages })
+                        )
+                    )
+                )
+            ) : renderCharts()
         ),
         createChatModal(isChatOpen, () => setIsChatOpen(false), handleSendMessage, messages),
         createFooter()

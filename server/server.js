@@ -109,9 +109,10 @@ wss.on('connection', (ws, req) =>
     ws.on('message', (data) => {
         try {
             const message = JSON.parse(data.toString());
-            
+            const dataString = data.toString();
+
             // Handle device messages differently from data updates
-            if (message.type === 'deviceMessage') 
+            if (message?.type === 'deviceMessage') 
             {
                 // Format the display name from the email
                 const displayName = formatDisplayName(message.email);
@@ -130,13 +131,53 @@ wss.on('connection', (ws, req) =>
                     }
                 });
             }
-            else 
+            else if (message?.type === 'deviceData')
             {
-                // Handle regular data updates (broadcast to other clients only)
-                const dataString = data.toString();
+                // Forward the original data to other clients
                 wss.clients.forEach((client) => {
                     if (client !== ws && client.readyState === ws.OPEN) {
+                        // Send the original data first
                         client.send(dataString);
+                        
+                        // If there are messages in the data, send them separately
+                        if (message.Messages && Array.isArray(message.Messages)) {
+                            message.Messages.forEach(msg => {
+                                const systemMessage = {
+                                    type: 'systemMessage',
+                                    message: msg.Message,
+                                    messageType: msg.MessageType, 
+                                    source: msg.Source,
+                                    timestamp: msg.Timestamp
+                                };
+                                client.send(JSON.stringify(systemMessage));
+                            });
+                        }
+                    }
+                });
+            }
+            else 
+            {
+                console.log(dataString);
+
+                // Handle other data updates (broadcast to other clients only)
+                wss.clients.forEach((client) => {
+                    if (client !== ws && client.readyState === ws.OPEN) {
+                        // Send the original data first
+                        client.send(dataString);
+                        
+                        // If there are messages in the data, send them separately
+                        if (message.Messages && Array.isArray(message.Messages)) {
+                            message.Messages.forEach(msg => {
+                                const systemMessage = {
+                                    type: 'systemMessage',
+                                    message: msg.Message,
+                                    messageType: msg.MessageType, 
+                                    source: msg.Source,
+                                    timestamp: msg.Timestamp
+                                };
+                                client.send(JSON.stringify(systemMessage));
+                            });
+                        }
                     }
                 });
             }

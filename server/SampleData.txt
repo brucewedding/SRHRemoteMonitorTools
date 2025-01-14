@@ -1,0 +1,109 @@
+
+0|RealheartServer  | other data updates: {
+0|RealheartServer  |   Timestamp: '2025-01-13T15:54:49.4349812Z',
+0|RealheartServer  |   SystemId: 'Frank Pantridge',
+0|RealheartServer  |   StatusData: {
+0|RealheartServer  |     ExtLeft: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     ExtRight: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     CANStatus: { Text: 'Receiving', Color: 'badge-success' },
+0|RealheartServer  |     BytesSent: { Text: '34', Color: 'badge-info' },
+0|RealheartServer  |     BytesRecd: { Text: '0.08', Color: 'badge-info' },
+0|RealheartServer  |     Strokes: { Text: '14,480', Color: 'badge-info' },
+0|RealheartServer  |     IntLeft: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     IntRight: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     BusLoad: { Text: '4%', Color: '#FF2EAE00' }
+0|RealheartServer  |   },
+0|RealheartServer  |   LeftHeart: {
+0|RealheartServer  |     StrokeVolume: '48',
+0|RealheartServer  |     PowerConsumption: { PrimaryValue: '0.1', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressure: {
+0|RealheartServer  |       PrimaryValue: '11.5',
+0|RealheartServer  |       SecondaryValue: null,
+0|RealheartServer  |       BackColor: 'Default'
+0|RealheartServer  |     },
+0|RealheartServer  |     MedicalPressure: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressureMin: 9.19999981,
+0|RealheartServer  |     IntPressureMax: 13.7989998,
+0|RealheartServer  |     CardiacOutput: { PrimaryValue: '4.9', SecondaryValue: null, BackColor: 'Yellow' }
+0|RealheartServer  |   },
+0|RealheartServer  |   RightHeart: {
+0|RealheartServer  |     StrokeVolume: '39',
+0|RealheartServer  |     PowerConsumption: { PrimaryValue: '0.2', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressure: {
+0|RealheartServer  |       PrimaryValue: '10.5',
+0|RealheartServer  |       SecondaryValue: null,
+0|RealheartServer  |       BackColor: 'Default'
+0|RealheartServer  |     },
+0|RealheartServer  |     MedicalPressure: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressureMin: 0,
+0|RealheartServer  |     IntPressureMax: 0,
+0|RealheartServer  |     CardiacOutput: { PrimaryValue: '5.1', SecondaryValue: null, BackColor: 'Default' }
+0|RealheartServer  |   },
+0|RealheartServer  |   HeartRate: '140',
+0|RealheartServer  |   OperationState: 'Manual',
+0|RealheartServer  |   HeartStatus: 'Both Running',
+0|RealheartServer  |   FlowLimitState: '',
+0|RealheartServer  |   FlowLimit: '9.198',
+0|RealheartServer  |   AtmosPressure: '0',
+0|RealheartServer  |   UseMedicalSensor: false,
+0|RealheartServer  |   AoPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   CVPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   PAPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   ArtPressSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   LocalClock: '16:54:49',
+0|RealheartServer  |   Messages: [
+0|RealheartServer  |     {
+0|RealheartServer  |       Type: 'systemMessage',
+0|RealheartServer  |       Message: 'Edit completed successfully for Heart rate (setpoint). Set to 140.00 bpm',
+0|RealheartServer  |       MessageType: 'Info',
+0|RealheartServer  |       Source: 'PCApplication',
+0|RealheartServer  |       Timestamp: '2025-01-13 16:54:49'
+0|RealheartServer  |     }
+0|RealheartServer  |   ]
+0|RealheartServer  | }
+0|RealheartServer  | other data updates: {
+0|RealheartServer  |   Timestamp: '2025-01-13T15:54:50.4336438Z',
+0|RealheartServer  |   SystemId: 'Frank Pantridge',
+0|RealheartServer  |   StatusData: {
+0|RealheartServer  |     ExtLeft: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     ExtRight: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     CANStatus: { Text: 'Receiving', Color: 'badge-success' },
+0|RealheartServer  |     BytesSent: { Text: '36', Color: 'badge-info' },
+0|RealheartServer  |     BytesRecd: { Text: '0.08', Color: 'badge-info' },
+0|RealheartServer  |     Strokes: { Text: '14,481', Color: 'badge-info' },
+0|RealheartServer  |     IntLeft: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     IntRight: { Text: 'OK', Color: '#FF2EAE00' },
+0|RealheartServer  |     BusLoad: { Text: '0%', Color: '#FF2EAE00' }
+0|RealheartServer  |   },
+0|RealheartServer  |   LeftHeart: {
+0|RealheartServer  |     StrokeVolume: '48',
+0|RealheartServer  |     PowerConsumption: { PrimaryValue: '0.1', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressure: { PrimaryValue: '7', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     MedicalPressure: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressureMin: 9.19999981,
+0|RealheartServer  |     IntPressureMax: 13.7989998,
+0|RealheartServer  |     CardiacOutput: { PrimaryValue: '4.8', SecondaryValue: null, BackColor: 'Yellow' }
+0|RealheartServer  |   },
+0|RealheartServer  |   RightHeart: {
+0|RealheartServer  |     StrokeVolume: '39',
+0|RealheartServer  |     PowerConsumption: { PrimaryValue: '0.1', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressure: { PrimaryValue: '6', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     MedicalPressure: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |     IntPressureMin: 0,
+0|RealheartServer  |     IntPressureMax: 0,
+0|RealheartServer  |     CardiacOutput: { PrimaryValue: '4.6', SecondaryValue: null, BackColor: 'Default' }
+0|RealheartServer  |   },
+0|RealheartServer  |   HeartRate: '140',
+0|RealheartServer  |   OperationState: 'Manual',
+0|RealheartServer  |   HeartStatus: 'Both Running',
+0|RealheartServer  |   FlowLimitState: '',
+0|RealheartServer  |   FlowLimit: '9.192',
+0|RealheartServer  |   AtmosPressure: '0',
+0|RealheartServer  |   UseMedicalSensor: false,
+0|RealheartServer  |   AoPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   CVPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   PAPSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   ArtPressSensor: { PrimaryValue: '-', SecondaryValue: null, BackColor: 'Default' },
+0|RealheartServer  |   LocalClock: '16:54:50',
+0|RealheartServer  |   Messages: []
+0|RealheartServer  | }

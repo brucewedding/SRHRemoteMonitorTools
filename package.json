@@ -15,7 +15,7 @@
     "start": "node server/server.js",
     "dev": "concurrently \"node server/server.js\" \"vite\"",
     "build": "vite build",
-    "deploy": "npm run build && ssh root@realheartremote.live \"rm -rf /var/www/realheartremote.live/dist/assets/*\" && scp -r dist/ server/ package.json index.html root@realheartremote.live:/var/www/realheartremote.live/ && ssh root@realheartremote.live \"cd /var/www/realheartremote.live && npm install && pm2 restart all\"",
+    "deploy": "npm run build && scp -r dist/ server/ package.json index.html root@realheartremote.live:/var/www/realheartremote.live/ && ssh root@realheartremote.live \"cd /var/www/realheartremote.live  && npm install && pm2 restart all\"",
     "preview": "vite preview",
     "build:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --watch"

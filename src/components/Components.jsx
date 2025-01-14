@@ -323,7 +323,7 @@ export function createChatModal(isOpen, onClose, onSend, messages = []) {
     );
 }
 
-export function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat, systemId) {
+export function createHeader(status, lastUpdate, isDetailedView, onToggleView, theme, onOpenChat, systemId, onStatusClick) {
     const formatTime = (timestamp) => {
         if (!timestamp) return 'Never';
         if (timestamp instanceof Date) {
@@ -337,7 +337,9 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
         React.createElement('h2', { className: 'text-lg font-bold flex items-center gap-2' },
           'Status: ' + status,
           React.createElement('div', {
-            className: `badge ${status === 'Connected' ? 'badge-success' : 'badge-error'}`
+            className: `badge ${status === 'Connected' ? 'badge-success' : 'badge-error'} cursor-pointer hover:opacity-80`,
+            onClick: onStatusClick,
+            title: status === 'Connected' ? 'Click to disconnect' : 'Click to connect'
           }, status)
         ),
         React.createElement('p', { className: 'opacity-70' }, 
