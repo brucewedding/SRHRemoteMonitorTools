@@ -19,15 +19,18 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
         // Ensure value is treated as a string
         const valueStr = String(value);
         
-        if (valueStr.includes('increasing')) {
+        if (valueStr.includes('Allow increasing')) {
             stateValue = 'Inc';
             stateDesc = 'Flow Increasing';
-        } else if (valueStr.includes('decreasing')) {
+        } else if (valueStr.includes('Decrease')) {
             stateValue = 'Dec';
             stateDesc = 'Flow Decreasing';
-        } else {
+        } else if (valueStr.includes('Keep constant')) {
             stateValue = 'Cons';
             stateDesc = 'Flow Constant';
+        } else {
+            stateValue = "-";
+            stateDesc = 'Flow State';
         }
 
         return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4' },

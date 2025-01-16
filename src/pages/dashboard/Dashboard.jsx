@@ -251,6 +251,8 @@ function CombinedDashboard() {
                         IvcPressSensor: data.IvcPressSensor || prevData.IvcPressSensor,
                         OperationState: data.OperationState || prevData.OperationState,
                         HeartStatus: data.HeartStatus || prevData.HeartStatus,
+                        FlowLimitState: data.FlowLimitState || prevData.FlowLimitState,
+                        FlowLimit: data.FlowLimit || prevData.FlowLimit,
                         UseMedicalSensor: data.UseMedicalSensor !== undefined ? 
                             (data.UseMedicalSensor === true || data.UseMedicalSensor === 'true') : 
                             prevData.UseMedicalSensor,
@@ -473,7 +475,7 @@ function CombinedDashboard() {
 
                             createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'power.png', 'base-content', detailedData, 'W')
+                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W')
 
                         )
 
@@ -500,7 +502,7 @@ function CombinedDashboard() {
 
                             createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'power.png', 'base-content', detailedData, 'W')
+                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W')
 
                         )
 
