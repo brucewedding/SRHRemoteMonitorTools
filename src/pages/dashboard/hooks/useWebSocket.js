@@ -56,10 +56,13 @@ export function useWebSocket() {
     const [lastUpdate, setLastUpdate] = useState(null);
     const [status, setStatus] = useState('Connecting...');
     const [messages, setMessages] = useState([]);
+    const [availableSystems, setAvailableSystems] = useState([]);
+    const [selectedSystem, setSelectedSystem] = useState(null);
     const wsRef = useRef(null);
 
     useEffect(() => {
-        const ws = new WebSocket('wss://realheartremote.live/ws');
+        const systemId = selectedSystem || new URLSearchParams(window.location.search).get('systemId');
+        const ws = new WebSocket(`wss://realheartremote.live/ws${systemId ? `?systemId=${systemId}` : ''}`);
         wsRef.current = ws;
         
         ws.onopen = () => setStatus('Connected');
@@ -73,6 +76,11 @@ export function useWebSocket() {
                     message: data.message,
                     timestamp: data.timestamp
                 }]);
+                return;
+            }
+
+            if (data.type === 'systems_list') {
+                setAvailableSystems(data.systems);
                 return;
             }
             
@@ -122,6 +130,16 @@ export function useWebSocket() {
         lastUpdate,
         status,
         messages,
-        sendMessage
+        availableSystems,
+        selectedSystem,
+        setSelectedSystem,
+        sendMessage,
+        wsRef,
+        setDetailedData,
+        setLastUpdate,
+        setStatus,
+        setMessages,
+        setAvailableSystems,
+        setSelectedSystem
     };
 }

@@ -120,6 +120,9 @@ function CombinedDashboard() {
         LastUpdate: new Date().toLocaleString()
     });
 
+    const [availableSystems, setAvailableSystems] = React.useState([]);
+    const [selectedSystem, setSelectedSystem] = React.useState(null);
+
     // Refs
     const wsRef = React.useRef(null);
     const chartManager = React.useRef(new ChartManager());
@@ -142,15 +145,32 @@ function CombinedDashboard() {
     }, []);
 
     const handleConnect = React.useCallback(() => {
-        // Clean up any existing connection first
         if (wsRef.current) {
             wsRef.current.close();
             wsRef.current = null;
         }
 
         const email = user.emailAddresses[0].emailAddress;
-        const wsUrl = `${import.meta.env.VITE_WS_URL}?email=${encodeURIComponent(email)}`;
+        const params = new URLSearchParams();
+        
+        if (selectedSystem) {
+            params.append('systemId', selectedSystem);
+        }
+        if (email) {
+            params.append('email', email);
+        }
 
+        // Determine WebSocket URL based on environment
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = import.meta.env.DEV ? 'localhost:3000' : 'realheartremote.live/ws';
+        const wsUrl = `${wsProtocol}//${wsHost}${params.toString() ? '?' + params.toString() : ''}`;
+        
+        console.log('[Connecting to WebSocket]:', {
+            url: wsUrl,
+            isDev: import.meta.env.DEV,
+            protocol: wsProtocol
+        });
+        
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -162,121 +182,166 @@ function CombinedDashboard() {
         ws.onclose = () => {
             console.log('[WebSocket Disconnected]');
             setStatus('Disconnected');
-            wsRef.current = null;  // Clear the reference when connection closes
+            wsRef.current = null;
         };
 
         ws.onerror = (error) => {
             console.error('[WebSocket Error]:', error);
             setStatus('Error');
-            wsRef.current = null;  // Clear the reference on error
+            wsRef.current = null;
         };
 
-        ws.onmessage = (event) => {
-            console.warn('[WebSocket Message]:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                console.warn('[Parsed Data]:', {
-                    type: data.type,
-                    UseMedicalSensor: data.UseMedicalSensor,
-                    typeOf: typeof data.UseMedicalSensor
-                });
+        ws.onmessage = handleWebSocketMessage;
 
-                if (data.type === 'systemMessage') {
-                    addMessage({
-                        message: data.message,
-                        timestamp: new Date().toLocaleTimeString(),
-                        type: 'system'
-                    });
-                    return;
-                }
+    }, [user, selectedSystem]);
 
-                if (data.type === 'deviceMessage') {
-                    addMessage({
-                        message: data.message,
-                        timestamp: new Date().toLocaleTimeString(),
-                        email: data.email,
-                        type: 'user'
-                    });
-                    return;
-                }
+    const handleWebSocketMessage = React.useCallback((event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('\n[WebSocket Message Received]', {
+                type: data.type,
+                SystemId: data.SystemId,
+                systems: data.type === 'systems_list' ? data.systems : undefined,
+                timestamp: data.timestamp
+            });
 
-                if (data.systemId) {
-                    setSystemId(data.systemId);
-                }
-
-                setDetailedData(prevData => {
-                    console.warn('[State Update] UseMedicalSensor:', data.UseMedicalSensor, '[type:', typeof data.UseMedicalSensor, ']');
-                    return {
-                        ...prevData,
-                        StatusData: {
-                            ExtLeft: data.StatusData?.ExtLeft || prevData.StatusData.ExtLeft,
-                            ExtRight: data.StatusData?.ExtRight || prevData.StatusData.ExtRight,
-                            IntLeft: data.StatusData?.IntLeft || prevData.StatusData.IntLeft,
-                            IntRight: data.StatusData?.IntRight || prevData.StatusData.IntRight,
-                            CANStatus: data.StatusData?.CANStatus || prevData.StatusData.CANStatus,
-                            BytesSent: data.StatusData?.BytesSent || prevData.StatusData.BytesSent,
-                            BytesRecd: data.StatusData?.BytesRecd || prevData.StatusData.BytesRecd,
-                            Strokes: data.StatusData?.Strokes || prevData.StatusData.Strokes,
-                            BusLoad: data.StatusData?.BusLoad || prevData.StatusData.BusLoad
-                        },
-                        LeftHeart: {
-                            StrokeVolume: data.LeftHeart?.StrokeVolume || prevData.LeftHeart.StrokeVolume,
-                            PowerConsumption: data.LeftHeart?.PowerConsumption || prevData.LeftHeart.PowerConsumption,
-                            IntPressure: data.LeftHeart?.IntPressure || prevData.LeftHeart.IntPressure,
-                            IntPressureMin: data.LeftHeart?.IntPressureMin || prevData.LeftHeart.IntPressureMin,
-                            IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
-                            AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
-                            CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
-                            MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure,
-                            TargetStrokeLen: data.LeftHeart?.TargetStrokeLen || prevData.LeftHeart.TargetStrokeLen,
-                            ActualStrokeLen: data.LeftHeart?.ActualStrokeLen || prevData.LeftHeart.ActualStrokeLen
-                        },
-                        RightHeart: {
-                            StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
-                            PowerConsumption: data.RightHeart?.PowerConsumption || prevData.RightHeart.PowerConsumption,
-                            IntPressure: data.RightHeart?.IntPressure || prevData.RightHeart.IntPressure,
-                            IntPressureMin: data.RightHeart?.IntPressureMin || prevData.RightHeart.IntPressureMin,
-                            IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
-                            AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
-                            CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
-                            MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure,
-                            TargetStrokeLen: data.RightHeart?.TargetStrokeLen || prevData.RightHeart.TargetStrokeLen,
-                            ActualStrokeLen: data.RightHeart?.ActualStrokeLen || prevData.RightHeart.ActualStrokeLen
-                        },
-                        HeartRate: data.HeartRate || prevData.HeartRate,
-                        CVPSensor: data.CVPSensor || prevData.CVPSensor,
-                        PAPSensor: data.PAPSensor || prevData.PAPSensor,
-                        AoPSensor: data.AoPSensor || prevData.AoPSensor,
-                        ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
-                        IvcPressSensor: data.IvcPressSensor || prevData.IvcPressSensor,
-                        OperationState: data.OperationState || prevData.OperationState,
-                        HeartStatus: data.HeartStatus || prevData.HeartStatus,
-                        FlowLimitState: data.FlowLimitState || prevData.FlowLimitState,
-                        FlowLimit: data.FlowLimit || prevData.FlowLimit,
-                        UseMedicalSensor: data.UseMedicalSensor !== undefined ? 
-                            (data.UseMedicalSensor === true || data.UseMedicalSensor === 'true') : 
-                            prevData.UseMedicalSensor,
-                        LastUpdate: new Date().toLocaleTimeString()
-                    };
-                });
-
-                if (chartManager.current) {
-                    chartManager.current.updateStoredChartData(data);
-                    setDataUpdateCount(count => count + 1);
-                }
-            } catch (error) {
-                console.error('[WebSocket Error Parsing Data]:', error);
+            if (data.type === 'deviceMessage') {
+                addMessage(data);
+                return;
             }
-        };
-    }, [user, addMessage, setSystemId]);
+
+            if (data.type === 'systems_list') {
+                console.log('[Systems List Update]', {
+                    current: availableSystems,
+                    new: data.systems,
+                    selectedSystem
+                });
+                // Deduplicate and sort systems
+                const uniqueSystems = Array.from(new Set(data.systems)).sort();
+                setAvailableSystems(uniqueSystems);
+                return;
+            }
+
+            // If we receive data with a SystemId, add it to available systems if not present
+            if (data.SystemId && !availableSystems.includes(data.SystemId)) {
+                console.log('[New System Detected]', {
+                    systemId: data.SystemId,
+                    current: availableSystems
+                });
+                setAvailableSystems(prev => {
+                    const newSystems = Array.from(new Set([...prev, data.SystemId])).sort();
+                    return newSystems;
+                });
+            }
+
+            if (data.SystemId) {
+                setSystemId(data.SystemId);
+            }
+
+            setDetailedData(prevData => {
+                console.warn('[State Update] UseMedicalSensor:', data.UseMedicalSensor, '[type:', typeof data.UseMedicalSensor, ']');
+                return {
+                    ...prevData,
+                    StatusData: {
+                        ExtLeft: data.StatusData?.ExtLeft || prevData.StatusData.ExtLeft,
+                        ExtRight: data.StatusData?.ExtRight || prevData.StatusData.ExtRight,
+                        IntLeft: data.StatusData?.IntLeft || prevData.StatusData.IntLeft,
+                        IntRight: data.StatusData?.IntRight || prevData.StatusData.IntRight,
+                        CANStatus: data.StatusData?.CANStatus || prevData.StatusData.CANStatus,
+                        BytesSent: data.StatusData?.BytesSent || prevData.StatusData.BytesSent,
+                        BytesRecd: data.StatusData?.BytesRecd || prevData.StatusData.BytesRecd,
+                        Strokes: data.StatusData?.Strokes || prevData.StatusData.Strokes,
+                        BusLoad: data.StatusData?.BusLoad || prevData.StatusData.BusLoad
+                    },
+                    LeftHeart: {
+                        StrokeVolume: data.LeftHeart?.StrokeVolume || prevData.LeftHeart.StrokeVolume,
+                        PowerConsumption: data.LeftHeart?.PowerConsumption || prevData.LeftHeart.PowerConsumption,
+                        IntPressure: data.LeftHeart?.IntPressure || prevData.LeftHeart.IntPressure,
+                        IntPressureMin: data.LeftHeart?.IntPressureMin || prevData.LeftHeart.IntPressureMin,
+                        IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
+                        AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
+                        CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
+                        MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure,
+                        TargetStrokeLen: data.LeftHeart?.TargetStrokeLen || prevData.LeftHeart.TargetStrokeLen,
+                        ActualStrokeLen: data.LeftHeart?.ActualStrokeLen || prevData.LeftHeart.ActualStrokeLen
+                    },
+                    RightHeart: {
+                        StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
+                        PowerConsumption: data.RightHeart?.PowerConsumption || prevData.RightHeart.PowerConsumption,
+                        IntPressure: data.RightHeart?.IntPressure || prevData.RightHeart.IntPressure,
+                        IntPressureMin: data.RightHeart?.IntPressureMin || prevData.RightHeart.IntPressureMin,
+                        IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
+                        AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
+                        CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
+                        MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure,
+                        TargetStrokeLen: data.RightHeart?.TargetStrokeLen || prevData.RightHeart.TargetStrokeLen,
+                        ActualStrokeLen: data.RightHeart?.ActualStrokeLen || prevData.RightHeart.ActualStrokeLen
+                    },
+                    HeartRate: data.HeartRate || prevData.HeartRate,
+                    CVPSensor: data.CVPSensor || prevData.CVPSensor,
+                    PAPSensor: data.PAPSensor || prevData.PAPSensor,
+                    AoPSensor: data.AoPSensor || prevData.AoPSensor,
+                    ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
+                    IvcPressSensor: data.IvcPressSensor || prevData.IvcPressSensor,
+                    OperationState: data.OperationState || prevData.OperationState,
+                    HeartStatus: data.HeartStatus || prevData.HeartStatus,
+                    FlowLimitState: data.FlowLimitState || prevData.FlowLimitState,
+                    FlowLimit: data.FlowLimit || prevData.FlowLimit,
+                    UseMedicalSensor: data.UseMedicalSensor !== undefined ? 
+                        (data.UseMedicalSensor === true || data.UseMedicalSensor === 'true') : 
+                        prevData.UseMedicalSensor,
+                    LastUpdate: new Date().toLocaleTimeString()
+                };
+            });
+
+            if (chartManager.current) {
+                chartManager.current.updateStoredChartData(data);
+                setDataUpdateCount(count => count + 1);
+            }
+        } catch (error) {
+            console.error('[WebSocket Error Parsing Data]:', error);
+        }
+    }, [addMessage, setSystemId]);
 
     const handleStatusClick = React.useCallback(() => {
+        console.log('\n[Status Click]', {
+            status,
+            availableSystems,
+            selectedSystem
+        });
+        
         if (status === 'Connected') {
             handleDisconnect();
         } else {
-            handleConnect();
+            document.getElementById('system_select_modal').showModal();
         }
-    }, [status, handleConnect, handleDisconnect]);
+    }, [status, handleDisconnect, availableSystems, selectedSystem]);
+
+    const handleSystemSelect = React.useCallback((system) => {
+        console.log('\n[System Select]', {
+            system,
+            previousSystem: selectedSystem,
+            availableSystems
+        });
+        
+        setSelectedSystem(system);
+        setSystemId(system);
+        document.getElementById('system_select_modal').close();
+        handleConnect();
+    }, [handleConnect, selectedSystem, availableSystems]);
+
+    const handleConnectToFirst = React.useCallback(() => {
+        const firstSystem = availableSystems[0];
+        console.log('\n[Connect to First]', {
+            firstSystem,
+            availableSystems,
+            selectedSystem
+        });
+        
+        if (firstSystem) {
+            handleSystemSelect(firstSystem);
+        }
+    }, [availableSystems, handleSystemSelect, selectedSystem]);
 
     // Effects
     React.useEffect(() => {
@@ -668,7 +733,46 @@ function CombinedDashboard() {
             ) : renderCharts()
         ),
         createChatModal(isChatOpen, () => setIsChatOpen(false), handleSendMessage, messages),
-        createFooter()
+        createFooter(),
+        // System Select Modal
+        React.createElement('dialog', { id: 'system_select_modal', className: 'modal modal-bottom sm:modal-middle' },
+            React.createElement('div', { className: 'modal-box' },
+                React.createElement('h3', { className: 'font-bold text-lg' }, 'Select System'),
+                React.createElement('div', { className: 'py-4' },
+                    React.createElement('div', { className: 'space-y-2' },
+                        availableSystems.length === 0 ? (
+                            React.createElement('div', { className: 'text-center py-4' },
+                                React.createElement('div', { className: 'loading loading-spinner loading-lg' }),
+                                React.createElement('p', { className: 'text-sm text-gray-500 mt-2' }, 'Waiting for available systems...')
+                            )
+                        ) : (
+                            // Deduplicate systems before rendering
+                            Array.from(new Set(availableSystems)).sort().map(system => (
+                                React.createElement('button', {
+                                    key: system,
+                                    className: `btn btn-block ${selectedSystem === system ? 'btn-primary' : 'btn-ghost'} justify-between`,
+                                    onClick: () => handleSystemSelect(system)
+                                },
+                                    React.createElement('span', null, system),
+                                    selectedSystem === system && React.createElement('span', { className: 'badge badge-primary' }, 'Connected')
+                                )
+                            ))
+                        )
+                    )
+                ),
+                React.createElement('div', { className: 'modal-action' },
+                    React.createElement('form', { method: 'dialog', className: 'flex gap-2' },
+                        React.createElement('button', {
+                            type: 'button',
+                            className: 'btn btn-primary',
+                            onClick: handleConnectToFirst,
+                            disabled: availableSystems.length === 0
+                        }, 'Connect to First Available'),
+                        React.createElement('button', { className: 'btn' }, 'Cancel')
+                    )
+                )
+            )
+        )
     );
 }
 
