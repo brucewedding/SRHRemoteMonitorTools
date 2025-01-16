@@ -110,6 +110,13 @@ function CombinedDashboard() {
             SecondaryValue: null,
             BackColor: null
         },
+        IvcPressSensor: {
+            Name: '',
+            PrimaryValue: '0',
+            SecondaryValue: null,
+            BackColor: null
+        },
+
         LastUpdate: new Date().toLocaleString()
     });
 
@@ -241,6 +248,7 @@ function CombinedDashboard() {
                         PAPSensor: data.PAPSensor || prevData.PAPSensor,
                         AoPSensor: data.AoPSensor || prevData.AoPSensor,
                         ArtPressSensor: data.ArtPressSensor || prevData.ArtPressSensor,
+                        IvcPressSensor: data.IvcPressSensor || prevData.IvcPressSensor,
                         OperationState: data.OperationState || prevData.OperationState,
                         HeartStatus: data.HeartStatus || prevData.HeartStatus,
                         UseMedicalSensor: data.UseMedicalSensor !== undefined ? 
@@ -452,14 +460,14 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body py-1 px-1.5' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
                             //createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
-                            createStrokeCard('Stroke Len', detailedData.LeftHeart.TargetStrokeLen, detailedData.LeftHeart.ActualStrokeLen, 'stroke.png'),
+                            createStrokeCard('Stroke Len', detailedData.LeftHeart.TargetStrokeLen, detailedData.LeftHeart.ActualStrokeLen, 'piston.png'),
 
                             createPressureCard('Int Press', detailedData.LeftHeart.IntPressure, detailedData.LeftHeart.IntPressureMax, detailedData.LeftHeart.IntPressureMin, 'pressure.png'),
 
-                            createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
+                            //createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
@@ -479,14 +487,14 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body px-1.5 py-1' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
                             //createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
-                            createStrokeCard('Stroke Len', detailedData.RightHeart.TargetStrokeLen, detailedData.RightHeart.ActualStrokeLen, 'stroke.png'),
+                            createStrokeCard('Stroke Len', detailedData.RightHeart.TargetStrokeLen, detailedData.RightHeart.ActualStrokeLen, 'piston.png'),
 
                             createPressureCard('Int Press', detailedData.RightHeart.IntPressure, detailedData.RightHeart.IntPressureMax, detailedData.RightHeart.IntPressureMin, 'pressure.png'),
 
-                            createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
+                            //createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
@@ -506,14 +514,16 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body px-1.5 py-1' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4' },
                             createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('AoP', detailedData.AoPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData, 'mmHg')
+                            createDetailCard('Arterial', detailedData.ArtPressSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
+
+                            createDetailCard('IVC', detailedData.IvcPressSensor, 'pressure.png', 'base-content', detailedData, 'mmHg')
 
                         )
 

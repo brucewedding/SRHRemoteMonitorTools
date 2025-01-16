@@ -71,6 +71,13 @@ export function ChartView({ detailedData, theme }) {
                         'red',
                         'art'
                     )}
+                    {createChartCard(
+                        'IVC',
+                        `IVC: ${detailedData.IvcPressSensor.PrimaryValue} mmHg`,
+                        'red',
+                        'ivc'
+                    )}
+
                 </>
             )}
         </div>

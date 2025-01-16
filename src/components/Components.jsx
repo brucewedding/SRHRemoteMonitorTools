@@ -211,7 +211,7 @@ export function createStrokeCard(label, targetStroke, actualStroke, iconFile = '
                     displayValue
                 ),
                 React.createElement('div', { className: 'stat-desc opacity-70' }, 
-                    `mm`
+                    `Target/Actual mm`
                 )
             ),
             React.createElement('div', { className: 'flex-shrink-0' },

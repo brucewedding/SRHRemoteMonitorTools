@@ -25,7 +25,8 @@ const initialDetailedData = {
     CVPSensor: getInitialSensorData(),
     PAPSensor: getInitialSensorData(),
     AoPSensor: getInitialSensorData(),
-    ArtPressSensor: getInitialSensorData()
+    ArtPressSensor: getInitialSensorData(),
+    IvcPressSensor: getInitialSensorData()
 };
 
 function getInitialHeartData() {
@@ -91,6 +92,7 @@ export function useWebSocket() {
                 PAPSensor: data.PAPSensor || getInitialSensorData(),
                 AoPSensor: data.AoPSensor || getInitialSensorData(),
                 ArtPressSensor: data.ArtPressSensor || getInitialSensorData(),
+                IvcPressSensor: data.IvcPressSensor || getInitialSensorData(),
                 LeftHeart: {
                     ...prevData.LeftHeart,
                     ...data.LeftHeart
