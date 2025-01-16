@@ -83,26 +83,6 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
         displayValue = String(value);
     }
 
-    // Determine indicator state based on BackColor if value is an object
-    let indicatorColor = 'bg-success text-success-content';
-    let indicatorText = 'OK';
-    let showIndicator = false;
-
-    if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
-        const color = value.BackColor.toLowerCase();
-        
-        if (color === 'yellow') {
-            showIndicator = true;
-            indicatorColor = 'bg-warning text-warning-content';
-            indicatorText = 'OR';
-        } else if (color === 'red') {
-            showIndicator = true;
-            indicatorColor = 'bg-error text-error-content';
-            indicatorText = 'OR';
-        }
-        // No indicator for 'default' or any other color
-    }
-
     // Determine background color based on BackColor if value is an object
     let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default background and border with consistent width
     
@@ -161,15 +141,9 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
         )
     ]);
 
-    const indicator = showIndicator && React.createElement('div', { 
-        key: 'indicator',
-        className: `indicator-item indicator-top indicator-end badge badge-sm ${indicatorColor}`,
-        style: { top: '0.5rem', right: '0.5rem' }
-    }, indicatorText);
-
     return React.createElement('div', { 
         className: `stat ${cardBgColor} shadow-xl rounded-xl p-4 relative`
-    }, [mainContent, indicator]);
+    }, [mainContent]);
 }
 
 export function createPressureCard(label, avgPressure, maxPressure, minPressure, iconFile = 'heart.png') {
@@ -184,15 +158,14 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
         if (avgPressure.BackColor) {
             const color = avgPressure.BackColor.toLowerCase();
             if (color === 'yellow') {
-                cardBgColor = 'bg-base-300 border-4 border-yellow-500';
+                cardBgColor = 'bg-base-300 border-4 border-yellow-500 border-opacity-100';
             } else if (color === 'red') {
-                cardBgColor = 'bg-base-300 border-4 border-red-500';
+                cardBgColor = 'bg-base-300 border-4 border-red-500 border-opacity-100';
             }
         }
     } else {
         displayValue = avgPressure || '-';
     }
-
     // Round max and min pressure values to 1 decimal place
     const formattedMax = Number(maxPressure).toFixed(1);
     const formattedMin = Number(minPressure).toFixed(1);
@@ -218,6 +191,40 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
         )
     );
 }
+
+export function createStrokeCard(label, targetStroke, actualStroke, iconFile = 'heart.png') {
+    // Extract display value and determine border color if avgPressure is an object
+    let displayValue = '-';
+    let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default with consistent border width
+
+    // Round max and min pressure values to 1 decimal place
+    const formattedTarget = targetStroke ? Number(targetStroke).toFixed(1) : '-';
+    const formattedActual = actualStroke ? Number(actualStroke).toFixed(1) : '-';
+
+    displayValue = `${formattedTarget}/${formattedActual}`;
+
+    return React.createElement('div', { className: `stat ${cardBgColor} shadow-xl rounded-xl p-4` },
+        React.createElement('div', { className: 'flex justify-between items-start' },
+            React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
+                React.createElement('div', { className: 'stat-title opacity-70' }, label),
+                React.createElement('div', { className: 'stat-value text-base-content text-2xl' }, 
+                    displayValue
+                ),
+                React.createElement('div', { className: 'stat-desc opacity-70' }, 
+                    `mm`
+                )
+            ),
+            React.createElement('div', { className: 'flex-shrink-0' },
+                React.createElement('img', {
+                    src: iconFile,
+                    className: 'h-8 w-8',
+                    alt: ''
+                })
+            )
+        )
+    );
+}
+
 
 export function createSensorStatusCard(label, status) {
     
@@ -347,10 +354,10 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
 
     return React.createElement('div', { className: 'flex flex-wrap justify-between items-center mb-4 gap-2' },
       React.createElement('div', null,
-        React.createElement('h2', { className: 'text-lg font-bold flex items-center gap-2' },
-          'Status: ' + status,
+        React.createElement('h2', { className: 'text-lg font-bold items-center gap-2 w-44' },
+          'Status',
           React.createElement('div', {
-            className: `badge ${status === 'Connected' ? 'badge-success' : 'badge-error'} cursor-pointer hover:opacity-80`,
+            className: `badge ${status === 'Connected' ? 'badge-success' : 'badge-error'} cursor-pointer select-none hover:scale-105 hover:opacity-80 w-40`,
             onClick: onStatusClick,
             title: status === 'Connected' ? 'Click to disconnect' : 'Click to connect'
           }, status)

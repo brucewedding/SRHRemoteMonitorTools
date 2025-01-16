@@ -1,5 +1,5 @@
 {
-    "Timestamp": "2025-01-16T09:29:39.2204063Z",
+    "Timestamp": "2025-01-16T10:02:40.2362535Z",
     "SystemId": "Maureen Jonas",
     "StatusData": {
         "ExtLeft": {
@@ -19,7 +19,7 @@
             "Color": "badge-info"
         },
         "BytesRecd": {
-            "Text": "1.56",
+            "Text": "0.82",
             "Color": "badge-info"
         },
         "Strokes": {
@@ -42,42 +42,42 @@
     "LeftHeart": {
         "StrokeVolume": "11",
         "PowerConsumption": {
-            "PrimaryValue": "0.2",
+            "PrimaryValue": "0.1",
             "SecondaryValue": null,
             "BackColor": "Default"
         },
         "IntPressure": {
-            "PrimaryValue": "5.5",
+            "PrimaryValue": "6",
             "SecondaryValue": null,
-            "BackColor": "Yellow"
+            "BackColor": "Default"
         },
         "MedicalPressure": {
             "PrimaryValue": "-",
             "SecondaryValue": null,
             "BackColor": "Default"
         },
-        "IntPressureMin": 6,
-        "IntPressureMax": 9,
+        "IntPressureMin": 0.400000006,
+        "IntPressureMax": 0.600000024,
         "CardiacOutput": {
             "PrimaryValue": "0.1",
             "SecondaryValue": null,
             "BackColor": "Red"
         },
-        "ActualStrokeLen": "4.5",
+        "ActualStrokeLen": "4.3",
         "TargetStrokeLen": "5",
-        "SensorTemperature": "26.13",
-        "ThermistorTemperature": "26.13",
+        "SensorTemperature": "22.37",
+        "ThermistorTemperature": "22.37",
         "CpuLoad": "12"
     },
     "RightHeart": {
         "StrokeVolume": "11",
         "PowerConsumption": {
-            "PrimaryValue": "0.2",
+            "PrimaryValue": "0.1",
             "SecondaryValue": null,
             "BackColor": "Default"
         },
         "IntPressure": {
-            "PrimaryValue": "5",
+            "PrimaryValue": "8",
             "SecondaryValue": null,
             "BackColor": "Default"
         },
@@ -86,24 +86,24 @@
             "SecondaryValue": null,
             "BackColor": "Default"
         },
-        "IntPressureMin": 8,
-        "IntPressureMax": 12,
+        "IntPressureMin": 8.39999962,
+        "IntPressureMax": 12.6000004,
         "CardiacOutput": {
-            "PrimaryValue": "0.1",
+            "PrimaryValue": "0.2",
             "SecondaryValue": null,
             "BackColor": "Default"
         },
-        "ActualStrokeLen": "4.3",
+        "ActualStrokeLen": "4.7",
         "TargetStrokeLen": "5",
-        "SensorTemperature": "26.13",
-        "ThermistorTemperature": "26.13",
+        "SensorTemperature": "22.37",
+        "ThermistorTemperature": "22.37",
         "CpuLoad": "12"
     },
     "HeartRate": "15",
     "OperationState": "Startup",
     "HeartStatus": "Both Running",
     "FlowLimitState": "",
-    "FlowLimit": "9.202",
+    "FlowLimit": "9.194",
     "AtmosPressure": "0",
     "UseMedicalSensor": false,
     "AoPSensor": {
@@ -127,6 +127,6 @@
         "BackColor": "Default"
     },
     "IVCSensorVal": "-",
-    "LocalClock": "10:29:39",
+    "LocalClock": "11:02:40",
     "Messages": []
 }

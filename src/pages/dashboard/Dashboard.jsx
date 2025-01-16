@@ -6,6 +6,7 @@ import {
     createCard,
     createDetailCard,
     createPressureCard,
+    createStrokeCard,
     createSensorStatusCard,
     createChatModal,
     createHeader,
@@ -49,6 +50,8 @@ function CombinedDashboard() {
             IntPressureMax: '0', 
             AtrialPressure: '0', 
             CardiacOutput: '0',
+            TargetStrokeLen: '0',
+            ActualStrokeLen: '0',
             MedicalPressure: {
                 Name: '',
                 PrimaryValue: '-',
@@ -65,6 +68,8 @@ function CombinedDashboard() {
             IntPressureMax: '0', 
             AtrialPressure: '0', 
             CardiacOutput: '0',
+            TargetStrokeLen: '0',
+            ActualStrokeLen: '0',
             MedicalPressure: {
                 Name: '',
                 PrimaryValue: '-',
@@ -215,7 +220,9 @@ function CombinedDashboard() {
                             IntPressureMax: data.LeftHeart?.IntPressureMax || prevData.LeftHeart.IntPressureMax,
                             AtrialPressure: data.LeftHeart?.AtrialPressure || prevData.LeftHeart.AtrialPressure,
                             CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
-                            MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure
+                            MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure,
+                            TargetStrokeLen: data.LeftHeart?.TargetStrokeLen || prevData.LeftHeart.TargetStrokeLen,
+                            ActualStrokeLen: data.LeftHeart?.ActualStrokeLen || prevData.LeftHeart.ActualStrokeLen
                         },
                         RightHeart: {
                             StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
@@ -225,7 +232,9 @@ function CombinedDashboard() {
                             IntPressureMax: data.RightHeart?.IntPressureMax || prevData.RightHeart.IntPressureMax,
                             AtrialPressure: data.RightHeart?.AtrialPressure || prevData.RightHeart.AtrialPressure,
                             CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
-                            MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure
+                            MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure,
+                            TargetStrokeLen: data.RightHeart?.TargetStrokeLen || prevData.RightHeart.TargetStrokeLen,
+                            ActualStrokeLen: data.RightHeart?.ActualStrokeLen || prevData.RightHeart.ActualStrokeLen
                         },
                         HeartRate: data.HeartRate || prevData.HeartRate,
                         CVPSensor: data.CVPSensor || prevData.CVPSensor,
@@ -444,7 +453,9 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                            createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
+                            //createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
+
+                            createStrokeCard('Stroke Len', detailedData.LeftHeart.TargetStrokeLen, detailedData.LeftHeart.ActualStrokeLen, 'stroke.png'),
 
                             createPressureCard('Int Press', detailedData.LeftHeart.IntPressure, detailedData.LeftHeart.IntPressureMax, detailedData.LeftHeart.IntPressureMin, 'pressure.png'),
 
@@ -469,7 +480,9 @@ function CombinedDashboard() {
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
 
                         React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4' },
-                            createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
+                            //createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
+
+                            createStrokeCard('Stroke Len', detailedData.RightHeart.TargetStrokeLen, detailedData.RightHeart.ActualStrokeLen, 'stroke.png'),
 
                             createPressureCard('Int Press', detailedData.RightHeart.IntPressure, detailedData.RightHeart.IntPressureMax, detailedData.RightHeart.IntPressureMin, 'pressure.png'),
 
