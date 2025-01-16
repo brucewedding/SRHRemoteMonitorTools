@@ -138,10 +138,13 @@ function CombinedDashboard() {
 
     // WebSocket handlers
     const handleDisconnect = React.useCallback(() => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        if (wsRef.current) {
             wsRef.current.close();
-            wsRef.current = null;  // Clear the reference after closing
+            wsRef.current = null;
         }
+        setStatus('Disconnected');
+        setSelectedSystem(null);
+        setSystemId(null);
     }, []);
 
     const handleConnect = React.useCallback(() => {
@@ -160,16 +163,11 @@ function CombinedDashboard() {
             params.append('email', email);
         }
 
-        // Determine WebSocket URL based on environment
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = import.meta.env.DEV ? 'localhost:3000' : 'realheartremote.live/ws';
         const wsUrl = `${wsProtocol}//${wsHost}${params.toString() ? '?' + params.toString() : ''}`;
         
-        console.log('[Connecting to WebSocket]:', {
-            url: wsUrl,
-            isDev: import.meta.env.DEV,
-            protocol: wsProtocol
-        });
+        console.log('[Connecting to WebSocket]:', wsUrl);
         
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -183,12 +181,16 @@ function CombinedDashboard() {
             console.log('[WebSocket Disconnected]');
             setStatus('Disconnected');
             wsRef.current = null;
+            setSelectedSystem(null);
+            setSystemId(null);
         };
 
         ws.onerror = (error) => {
             console.error('[WebSocket Error]:', error);
             setStatus('Error');
             wsRef.current = null;
+            setSelectedSystem(null);
+            setSystemId(null);
         };
 
         ws.onmessage = handleWebSocketMessage;
@@ -200,6 +202,16 @@ function CombinedDashboard() {
             const data = JSON.parse(event.data);
             if (data.type === 'deviceMessage') {
                 addMessage(data);
+                return;
+            }
+
+            if (data.type === 'systemMessage') {
+                addMessage({
+                    username: data.source || 'System',
+                    message: data.message,
+                    timestamp: data.timestamp,
+                    type: data.messageType
+                });
                 return;
             }
 
@@ -220,6 +232,18 @@ function CombinedDashboard() {
 
             if (data.SystemId) {
                 setSystemId(data.SystemId);
+            }
+
+            // Handle system messages in status update
+            if (data.Messages && Array.isArray(data.Messages)) {
+                data.Messages.forEach(msg => {
+                    addMessage({
+                        username: msg.Source || 'System',
+                        message: msg.Message,
+                        timestamp: msg.Timestamp,
+                        type: msg.MessageType
+                    });
+                });
             }
 
             setDetailedData(prevData => {
@@ -287,6 +311,7 @@ function CombinedDashboard() {
     }, [addMessage, setSystemId]);
 
     const handleStatusClick = React.useCallback(() => {
+        console.log('[Status Click]', { status, wsRef: !!wsRef.current });
         if (status === 'Connected') {
             handleDisconnect();
         } else {

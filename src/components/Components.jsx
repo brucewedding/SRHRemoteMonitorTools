@@ -230,8 +230,6 @@ export function createStrokeCard(label, targetStroke, actualStroke, iconFile = '
 
 
 export function createSensorStatusCard(label, status) {
-    
-    console.warn(`[SensorStatusCard] label: ${label}, status: ${status}, type: ${typeof status}`);
 
     let backgroundColor = 'bg-base-300';
     let statusText = 'Inactive';
@@ -241,7 +239,6 @@ export function createSensorStatusCard(label, status) {
     if (typeof status === 'boolean' || typeof status === 'string') {
         // Convert string 'true'/'false' to boolean if needed
         const boolStatus = typeof status === 'string' ? status.toLowerCase() === 'true' : status;
-        console.warn(`[SensorStatusCard] boolStatus: ${boolStatus}, type: ${typeof boolStatus}`);
         if (boolStatus === true) {
             backgroundColor = 'bg-success bg-opacity-20';
             statusText = 'Active';

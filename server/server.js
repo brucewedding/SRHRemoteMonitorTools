@@ -231,14 +231,35 @@ wss.on('connection', (ws, req) =>
 
     ws.on('message', (data) => {
         try {
-            const message = JSON.parse(data.toString());
-            console.log('\n[WebSocket Message]', {
-                type: message.type,
-                SystemId: message.SystemId,
-                messageSize: data.toString().length
-            });
+            const rawData = data.toString();
+            const message = JSON.parse(rawData);
 
-            // Track system if SystemId is present in any message
+            // Handle array of system messages
+            if (Array.isArray(message) && message.length > 0 && message[0].Type === 'systemMessage') {
+                if (ws.systemId) {
+                    const watchingClients = connectedSystems.get(ws.systemId);
+                    if (watchingClients) {
+                        message.forEach(msg => {
+                            const systemMessage = {
+                                type: 'systemMessage',
+                                message: msg.Message,
+                                messageType: msg.MessageType,
+                                source: msg.Source,
+                                timestamp: msg.Timestamp
+                            };
+                            
+                            watchingClients.forEach(client => {
+                                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify(systemMessage));
+                                }
+                            });
+                        });
+                    }
+                }
+                return;
+            }
+
+            // Track system if SystemId is present in message
             if (message.SystemId) {
                 const systemId = message.SystemId;
 
@@ -248,38 +269,55 @@ wss.on('connection', (ws, req) =>
                 // Add or update system connection if not already tracked
                 if (!connectedSystems.has(systemId)) {
                     connectedSystems.set(systemId, new Set());
-                    
-                    // Connect all waiting clients to this system
-                    if (waitingClients.size > 0) {
-                        waitingClients.forEach(client => {
-                            if (client.readyState === ws.OPEN) {
-                                connectClientToSystem(client, systemId);
-                            } else {
-                                waitingClients.delete(client);
-                            }
-                        });
-                    }
                 }
                 
                 // Mark this connection as the system if not already marked
                 if (!ws.isSystem) {
                     ws.isSystem = true;
                     ws.systemId = systemId;
-                    console.log(`[Marking System] ${systemId}`);
                     // Broadcast updated systems list after marking as system
                     broadcastSystemsList();
                 }
+
+                // Forward status update to watching clients
+                const watchingClients = connectedSystems.get(systemId);
+                if (watchingClients) {
+                    // Forward the status update
+                    watchingClients.forEach(client => {
+                        if (client !== ws && client.readyState === WebSocket.OPEN) {
+                            client.send(rawData);
+                        }
+                    });
+
+                    // Process any messages in the status update
+                    if (message.Messages && Array.isArray(message.Messages)) {
+                        message.Messages.forEach(msg => {
+                            const systemMessage = {
+                                type: 'systemMessage',
+                                message: msg.Message,
+                                messageType: msg.MessageType,
+                                source: msg.Source,
+                                timestamp: msg.Timestamp
+                            };
+                            
+                            watchingClients.forEach(client => {
+                                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify(systemMessage));
+                                }
+                            });
+                        });
+                    }
+                }
             }
 
-            // Handle device messages differently from data updates
-            if (message?.type === 'deviceMessage') 
-            {
+            // Handle device messages
+            else if (message?.type === 'deviceMessage') {
                 // Format the display name from the email
                 const displayName = formatDisplayName(message.email);
                 
                 // Send to all clients, marking the message as "self" for the sender
                 wss.clients.forEach((client) => {
-                    if (client.readyState === ws.OPEN) {
+                    if (client.readyState === WebSocket.OPEN) {
                         const broadcastMessage = {
                             type: 'deviceMessage',
                             timestamp: new Date().toISOString(),
@@ -291,86 +329,9 @@ wss.on('connection', (ws, req) =>
                     }
                 });
             }
-            else if (message?.type === 'deviceData')
-            {
-                // Forward the original data to other clients
-                wss.clients.forEach((client) => {
-                    if (client !== ws && client.readyState === ws.OPEN) {
-                        // Send the original data first
-                        client.send(data.toString());
-                        
-                        // If there are messages in the data, send them separately
-                        if (message.Messages && Array.isArray(message.Messages)) {
-                            message.Messages.forEach(msg => {
-                                const systemMessage = {
-                                    type: 'systemMessage',
-                                    message: msg.Message,
-                                    messageType: msg.MessageType, 
-                                    source: msg.Source,
-                                    timestamp: msg.Timestamp
-                                };
-                                client.send(JSON.stringify(systemMessage));
-                            });
-                        }
-                    }
-                });
-            }
-            else if (message.type === 'system_data') {
-                // Handle other data updates (broadcast to watching clients only)
-                if (ws.systemId) {
-                    const watchingClients = connectedSystems.get(ws.systemId) || new Set();
-                    watchingClients.forEach((client) => {
-                        if (client.readyState === ws.OPEN) {
-                            // Ensure UseMedicalSensor is boolean before sending
-                            let dataToSend = data.toString();
-                            if (message.UseMedicalSensor !== undefined) {
-                                const modifiedMessage = { ...message };
-                                modifiedMessage.UseMedicalSensor = modifiedMessage.UseMedicalSensor === true || modifiedMessage.UseMedicalSensor === 'true';
-                                dataToSend = JSON.stringify(modifiedMessage);
-                            }
-                            // Send the data
-                            client.send(dataToSend);
-                        }
-                    });
-                }
-            }
-            else 
-            {
-                // Handle other data updates (broadcast to other clients only)
-                wss.clients.forEach((client) => {
-                    if (client !== ws && client.readyState === ws.OPEN) {
-                        // Ensure UseMedicalSensor is boolean before sending
-                        let dataToSend = data.toString();
-                        if (message.UseMedicalSensor !== undefined) {
-                            const modifiedMessage = { ...message };
-                            modifiedMessage.UseMedicalSensor = modifiedMessage.UseMedicalSensor === true || modifiedMessage.UseMedicalSensor === 'true';
-                            dataToSend = JSON.stringify(modifiedMessage);
-                        }
-                        // Send the data
-                        client.send(dataToSend);
-                        
-                        // If there are messages in the data, send them separately
-                        if (message.Messages && Array.isArray(message.Messages)) {
-                            message.Messages.forEach(msg => {
-                                const systemMessage = {
-                                    type: 'systemMessage',
-                                    message: msg.Message,
-                                    messageType: msg.MessageType, 
-                                    source: msg.Source,
-                                    timestamp: msg.Timestamp
-                                };
-                                client.send(JSON.stringify(systemMessage));
-                            });
-                        }
-                    }
-                });
-            }
-        } 
-        catch (error) 
-        {
+        } catch (error) {
             console.error('Error processing message:', error);
             // Don't forward raw messages on parse error
-            // Instead, try to handle it as a device message if possible
             try {
                 const email = wsClients.get(ws) || 'Unknown User';
                 const broadcastMessage = {
@@ -384,13 +345,11 @@ wss.on('connection', (ws, req) =>
                 
                 // Send to ALL clients INCLUDING the sender
                 wss.clients.forEach((client) => {
-                    if (client.readyState === ws.OPEN) {
+                    if (client.readyState === WebSocket.OPEN) {
                         client.send(broadcastString);
                     }
                 });
-            } 
-            catch (innerError) 
-            {
+            } catch (innerError) {
                 console.error('Error broadcasting message:', innerError);
             }
         }
