@@ -198,24 +198,12 @@ function CombinedDashboard() {
     const handleWebSocketMessage = React.useCallback((event) => {
         try {
             const data = JSON.parse(event.data);
-            console.log('\n[WebSocket Message Received]', {
-                type: data.type,
-                SystemId: data.SystemId,
-                systems: data.type === 'systems_list' ? data.systems : undefined,
-                timestamp: data.timestamp
-            });
-
             if (data.type === 'deviceMessage') {
                 addMessage(data);
                 return;
             }
 
             if (data.type === 'systems_list') {
-                console.log('[Systems List Update]', {
-                    current: availableSystems,
-                    new: data.systems,
-                    selectedSystem
-                });
                 // Deduplicate and sort systems
                 const uniqueSystems = Array.from(new Set(data.systems)).sort();
                 setAvailableSystems(uniqueSystems);
@@ -224,10 +212,6 @@ function CombinedDashboard() {
 
             // If we receive data with a SystemId, add it to available systems if not present
             if (data.SystemId && !availableSystems.includes(data.SystemId)) {
-                console.log('[New System Detected]', {
-                    systemId: data.SystemId,
-                    current: availableSystems
-                });
                 setAvailableSystems(prev => {
                     const newSystems = Array.from(new Set([...prev, data.SystemId])).sort();
                     return newSystems;
@@ -239,7 +223,6 @@ function CombinedDashboard() {
             }
 
             setDetailedData(prevData => {
-                console.warn('[State Update] UseMedicalSensor:', data.UseMedicalSensor, '[type:', typeof data.UseMedicalSensor, ']');
                 return {
                     ...prevData,
                     StatusData: {
@@ -304,44 +287,26 @@ function CombinedDashboard() {
     }, [addMessage, setSystemId]);
 
     const handleStatusClick = React.useCallback(() => {
-        console.log('\n[Status Click]', {
-            status,
-            availableSystems,
-            selectedSystem
-        });
-        
         if (status === 'Connected') {
             handleDisconnect();
         } else {
             document.getElementById('system_select_modal').showModal();
         }
-    }, [status, handleDisconnect, availableSystems, selectedSystem]);
+    }, [status, handleDisconnect]);
 
     const handleSystemSelect = React.useCallback((system) => {
-        console.log('\n[System Select]', {
-            system,
-            previousSystem: selectedSystem,
-            availableSystems
-        });
-        
         setSelectedSystem(system);
         setSystemId(system);
         document.getElementById('system_select_modal').close();
         handleConnect();
-    }, [handleConnect, selectedSystem, availableSystems]);
+    }, [handleConnect]);
 
     const handleConnectToFirst = React.useCallback(() => {
         const firstSystem = availableSystems[0];
-        console.log('\n[Connect to First]', {
-            firstSystem,
-            availableSystems,
-            selectedSystem
-        });
-        
         if (firstSystem) {
             handleSystemSelect(firstSystem);
         }
-    }, [availableSystems, handleSystemSelect, selectedSystem]);
+    }, [availableSystems, handleSystemSelect]);
 
     // Effects
     React.useEffect(() => {

@@ -43,10 +43,8 @@ const cleanupDuplicateSystems = (systemId) => {
     
     // Keep only the first instance and remove others
     if (duplicates.length > 1) {
-        console.log(`[Cleanup] Found ${duplicates.length} instances of system ${systemId}`);
         duplicates.slice(1).forEach(dupId => {
             connectedSystems.delete(dupId);
-            console.log(`[Cleanup] Removed duplicate system: ${dupId}`);
         });
     }
 };
@@ -58,8 +56,6 @@ const broadcastSystemsList = () => {
     uniqueSystems.forEach(cleanupDuplicateSystems);
     
     const systems = Array.from(connectedSystems.keys()).sort();
-    console.log('\n[broadcastSystemsList] Preparing to broadcast');
-    console.log('Available Systems:', systems);
     
     const message = {
         type: 'systems_list',
@@ -67,17 +63,12 @@ const broadcastSystemsList = () => {
         timestamp: new Date().toISOString()
     };
     
-    let sentCount = 0;
     // Send to all connected clients
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(message));
-            sentCount++;
         }
     });
-    
-    console.log(`[broadcastSystemsList] Sent to ${sentCount} clients`);
-    logServerState();
 };
 
 // Helper function to connect client to system
@@ -96,7 +87,6 @@ const connectClientToSystem = (client, systemId) => {
             // Clean up empty system entries
             if (watchers.size === 0) {
                 connectedSystems.delete(id);
-                console.log(`[Cleanup] Removed empty system: ${id}`);
             }
         }
     }
@@ -104,7 +94,6 @@ const connectClientToSystem = (client, systemId) => {
     connectedSystems.get(systemId).add(client);
     client.systemToWatch = systemId;
     waitingClients.delete(client);
-    console.log(`Connected client to system: ${systemId}`);
     
     // Broadcast updated list after connection
     broadcastSystemsList();
@@ -252,11 +241,6 @@ wss.on('connection', (ws, req) =>
             // Track system if SystemId is present in any message
             if (message.SystemId) {
                 const systemId = message.SystemId;
-                console.log('[System Message]', {
-                    systemId,
-                    isNewSystem: !connectedSystems.has(systemId),
-                    existingSystems: Array.from(connectedSystems.keys())
-                });
 
                 // Clean up any duplicates before adding new system
                 cleanupDuplicateSystems(systemId);
@@ -264,12 +248,9 @@ wss.on('connection', (ws, req) =>
                 // Add or update system connection if not already tracked
                 if (!connectedSystems.has(systemId)) {
                     connectedSystems.set(systemId, new Set());
-                    console.log(`[New System] ${systemId}`);
-                    logServerState();
                     
                     // Connect all waiting clients to this system
                     if (waitingClients.size > 0) {
-                        console.log(`[Connecting Waiting Clients] Count: ${waitingClients.size}`);
                         waitingClients.forEach(client => {
                             if (client.readyState === ws.OPEN) {
                                 connectClientToSystem(client, systemId);
