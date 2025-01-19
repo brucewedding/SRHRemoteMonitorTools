@@ -52,6 +52,9 @@ function CombinedDashboard() {
             CardiacOutput: '0',
             TargetStrokeLen: '0',
             ActualStrokeLen: '0',
+            SensorTemperature: '0',
+            ThermistorTemperature: '0',
+            CpuLoad: '0',
             MedicalPressure: {
                 Name: '',
                 PrimaryValue: '-',
@@ -70,6 +73,9 @@ function CombinedDashboard() {
             CardiacOutput: '0',
             TargetStrokeLen: '0',
             ActualStrokeLen: '0',
+            SensorTemperature: '0',
+            ThermistorTemperature: '0',
+            CpuLoad: '0',
             MedicalPressure: {
                 Name: '',
                 PrimaryValue: '-',
@@ -200,17 +206,23 @@ function CombinedDashboard() {
     const handleWebSocketMessage = React.useCallback((event) => {
         try {
             const data = JSON.parse(event.data);
-            if (data.type === 'deviceMessage') {
-                addMessage(data);
+            if (data.type === 'deviceMessage' || data.type === 'chatMessage') {
+                addMessage({
+                    type: 'chatMessage',
+                    source: data.username || data.source || 'Unknown User',
+                    message: data.message,
+                    timestamp: data.timestamp || new Date().toISOString()
+                });
                 return;
             }
 
             if (data.type === 'systemMessage') {
                 addMessage({
-                    username: data.source || 'System',
+                    type: 'systemMessage',
+                    source: data.source || 'System',
                     message: data.message,
                     timestamp: data.timestamp,
-                    type: data.messageType
+                    messageType: data.messageType
                 });
                 return;
             }
@@ -238,10 +250,11 @@ function CombinedDashboard() {
             if (data.Messages && Array.isArray(data.Messages)) {
                 data.Messages.forEach(msg => {
                     addMessage({
-                        username: msg.Source || 'System',
+                        type: 'systemMessage',
+                        source: msg.Source || 'System',
                         message: msg.Message,
                         timestamp: msg.Timestamp,
-                        type: msg.MessageType
+                        messageType: msg.MessageType
                     });
                 });
             }
@@ -270,7 +283,10 @@ function CombinedDashboard() {
                         CardiacOutput: data.LeftHeart?.CardiacOutput || prevData.LeftHeart.CardiacOutput,
                         MedicalPressure: data.LeftHeart?.MedicalPressure || prevData.LeftHeart.MedicalPressure,
                         TargetStrokeLen: data.LeftHeart?.TargetStrokeLen || prevData.LeftHeart.TargetStrokeLen,
-                        ActualStrokeLen: data.LeftHeart?.ActualStrokeLen || prevData.LeftHeart.ActualStrokeLen
+                        ActualStrokeLen: data.LeftHeart?.ActualStrokeLen || prevData.LeftHeart.ActualStrokeLen,
+                        SensorTemperature: Math.round((data.LeftHeart?.SensorTemperature || prevData.LeftHeart.SensorTemperature + Number.EPSILON) * 10) / 10,
+                        ThermistorTemperature: Math.round((data.LeftHeart?.ThermistorTemperature || prevData.LeftHeart.ThermistorTemperature + Number.EPSILON) * 10) / 10,
+                        CpuLoad: Math.round((data.LeftHeart?.CpuLoad || prevData.LeftHeart.CpuLoad + Number.EPSILON) * 10) / 10
                     },
                     RightHeart: {
                         StrokeVolume: data.RightHeart?.StrokeVolume || prevData.RightHeart.StrokeVolume,
@@ -282,7 +298,10 @@ function CombinedDashboard() {
                         CardiacOutput: data.RightHeart?.CardiacOutput || prevData.RightHeart.CardiacOutput,
                         MedicalPressure: data.RightHeart?.MedicalPressure || prevData.RightHeart.MedicalPressure,
                         TargetStrokeLen: data.RightHeart?.TargetStrokeLen || prevData.RightHeart.TargetStrokeLen,
-                        ActualStrokeLen: data.RightHeart?.ActualStrokeLen || prevData.RightHeart.ActualStrokeLen
+                        ActualStrokeLen: data.RightHeart?.ActualStrokeLen || prevData.RightHeart.ActualStrokeLen,
+                        SensorTemperature: Math.round((data.RightHeart?.SensorTemperature || prevData.RightHeart.SensorTemperature + Number.EPSILON) * 10) / 10,
+                        ThermistorTemperature: Math.round((data.RightHeart?.ThermistorTemperature || prevData.RightHeart.ThermistorTemperature + Number.EPSILON) * 10) / 10,
+                        CpuLoad: Math.round((data.RightHeart?.CpuLoad || prevData.RightHeart.CpuLoad + Number.EPSILON) * 10) / 10
                     },
                     HeartRate: data.HeartRate || prevData.HeartRate,
                     CVPSensor: data.CVPSensor || prevData.CVPSensor,
@@ -356,10 +375,13 @@ function CombinedDashboard() {
     const handleSendMessage = React.useCallback((message) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             const email = user.emailAddresses[0].emailAddress;
+            const username = user.fullName || email.split('@')[0];
             const messageData = {
-                type: 'deviceMessage',
+                type: 'chatMessage',
                 message: message,
-                email: user.emailAddresses[0].emailAddress
+                email: email,
+                username: username,
+                timestamp: new Date().toISOString()
             };
 
             wsRef.current.send(JSON.stringify(messageData));
@@ -428,17 +450,8 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body px-1.5 py-0.5' },
                         React.createElement('h2', { className: 'card-title opacity-80 mt-0  py-0' }, 'System Status'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 gap-4' },
-                            createCard('Heart Rate', `${detailedData.HeartRate} BPM`, 'red'),
-                            createCard('Operation State', detailedData.OperationState, 'blue'),
-                            createCard('Heart Status', detailedData.HeartStatus, 'green'),
-                            React.createElement('div', { className: 'grid grid-rows-2 gap-2 py-1' },
-                                createSensorStatusCard('Medical Sensors', detailedData.UseMedicalSensor),
-                                createSensorStatusCard('Internal Sensors', !detailedData.UseMedicalSensor)
-                            )
-                        ),
-                        React.createElement('div', { className: 'flex justify-between items-start mt-2 mb-2 flex-wrap gap-2' },
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                        React.createElement('div', { className: 'grid grid-cols-5 sm:flex sm:justify-between sm:items-start mt-2 mb-2 gap-x-1 gap-y-2 sm:flex-wrap sm:gap-2' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
@@ -448,7 +461,7 @@ function CombinedDashboard() {
                                 }, detailedData.StatusData.ExtLeft.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Ext L')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
@@ -458,7 +471,7 @@ function CombinedDashboard() {
                                 }, detailedData.StatusData.ExtRight.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Ext R')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
@@ -468,7 +481,7 @@ function CombinedDashboard() {
                                 }, detailedData.StatusData.IntLeft.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Int Lt')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
@@ -478,23 +491,23 @@ function CombinedDashboard() {
                                 }, detailedData.StatusData.IntRight.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Int Rt')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { className: `badge ${detailedData.StatusData.Strokes.Color} w-full text-center` }, detailedData.StatusData.Strokes.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Strokes')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { className: `badge ${detailedData.StatusData.BytesSent.Color} w-full text-center` }, detailedData.StatusData.BytesSent.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Sent')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { className: `badge ${detailedData.StatusData.BytesRecd.Color} w-full text-center` }, detailedData.StatusData.BytesRecd.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'MB Rec')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { className: `badge ${detailedData.StatusData.CANStatus.Color} w-full text-center` }, detailedData.StatusData.CANStatus.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'CAN')
                             ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
+                            React.createElement('div', { className: 'flex flex-col items-center sm:flex-1' },
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
@@ -517,7 +530,7 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body py-1 px-1.5' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Left Heart'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 sm:grid-cols-4 lg:grid-cols-4 gap-4' },
                             //createDetailCard('Stroke Vol', detailedData.LeftHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
                             createStrokeCard('Stroke Len', detailedData.LeftHeart.TargetStrokeLen, detailedData.LeftHeart.ActualStrokeLen, 'piston.png'),
@@ -526,11 +539,14 @@ function CombinedDashboard() {
 
                             //createDetailCard('Atrial Press', detailedData.LeftHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Medical Press', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
+                            createDetailCard('Med Sensor', detailedData.LeftHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('Cardiac Out', detailedData.LeftHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W')
+                            createDetailCard('Power', detailedData.LeftHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W'),
+                            createDetailCard('Sensor Tmp', detailedData.LeftHeart.SensorTemperature, 'temperature.png', 'base-content', detailedData, '°C'),
+                            createDetailCard('Therm Tmp', detailedData.LeftHeart.ThermistorTemperature, 'temperature.png', 'base-content', detailedData, '°C'),
+                            createDetailCard('CPU Load', detailedData.LeftHeart.CpuLoad, 'cpu.png', 'base-content', detailedData, '%')
 
                         )
 
@@ -544,7 +560,7 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body px-1.5 py-1' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'Right Heart'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 sm:grid-cols-4 lg:grid-cols-4 gap-4' },
                             //createDetailCard('Stroke Vol', detailedData.RightHeart.StrokeVolume, 'stroke.png', 'base-content', detailedData, 'mL'),
 
                             createStrokeCard('Stroke Len', detailedData.RightHeart.TargetStrokeLen, detailedData.RightHeart.ActualStrokeLen, 'piston.png'),
@@ -553,11 +569,14 @@ function CombinedDashboard() {
 
                             //createDetailCard('Atrial Press', detailedData.RightHeart.AtrialPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
-                            createDetailCard('Medical Press', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
+                            createDetailCard('Med Sensor', detailedData.RightHeart.MedicalPressure, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('Cardiac Out', detailedData.RightHeart.CardiacOutput, 'cardiacout.png', 'base-content', detailedData, 'L/min'),
 
-                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W')
+                            createDetailCard('Power', detailedData.RightHeart.PowerConsumption, 'watts.png', 'base-content', detailedData, 'W'),
+                            createDetailCard('Sensor Tmp', detailedData.RightHeart.SensorTemperature, 'temperature.png', 'base-content', detailedData, '°C'),
+                            createDetailCard('Therm Tmp', detailedData.RightHeart.ThermistorTemperature, 'temperature.png', 'base-content', detailedData, '°C'),
+                            createDetailCard('CPU Load', detailedData.RightHeart.CpuLoad, 'cpu.png', 'base-content', detailedData, '%')
 
                         )
 
@@ -571,7 +590,7 @@ function CombinedDashboard() {
                     React.createElement('div', { className: 'card-body px-1.5 py-1' },
                         React.createElement('h2', { className: 'card-title opacity-80' }, 'System Pressures'),
 
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4' },
+                        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-5 sm:grid-cols-5 lg:grid-cols-5 gap-4' },
                             createDetailCard('CVP', detailedData.CVPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),
 
                             createDetailCard('PAP', detailedData.PAPSensor, 'pressure.png', 'base-content', detailedData, 'mmHg'),

@@ -1,6 +1,9 @@
 const express = require('express');
-const { WebSocketServer } = require('ws');
+const { WebSocketServer, WebSocket } = require('ws');
 const http = require('http');
+const fs = require('fs').promises;
+const fsSync = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -217,36 +220,44 @@ wss.on('connection', (ws, req) =>
     
     // Broadcast connection message
     const connectionMessage = {
-        type: 'deviceMessage',
+        type: 'chatMessage',
         timestamp: new Date().toISOString(),
         username: displayName,
         message: `${displayName} just connected`
     };
     
     wss.clients.forEach((client) => {
-        if (client.readyState === ws.OPEN) {
+        if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(connectionMessage));
         }
     });
 
-    ws.on('message', (data) => {
+    ws.on('message', async (data) => {
         try {
             const rawData = data.toString();
             const message = JSON.parse(rawData);
 
+            //console.log('Received message:', message);
+            
+            // Log the message
+            await appendToLog(message).catch(err => console.error('Failed to log message:', err));
+
             // Handle array of system messages
             if (Array.isArray(message) && message.length > 0 && message[0].Type === 'systemMessage') {
+                //console.log('Received system messages:', message);
                 if (ws.systemId) {
                     const watchingClients = connectedSystems.get(ws.systemId);
                     if (watchingClients) {
                         message.forEach(msg => {
+                            console.log('Processing message:', msg);
                             const systemMessage = {
                                 type: 'systemMessage',
                                 message: msg.Message,
                                 messageType: msg.MessageType,
-                                source: msg.Source,
+                                source: msg.Source || wsClients.get(ws) || 'Unknown User',
                                 timestamp: msg.Timestamp
                             };
+                            //console.log('Sending formatted message:', systemMessage);
                             
                             watchingClients.forEach(client => {
                                 if (client !== ws && client.readyState === WebSocket.OPEN) {
@@ -255,79 +266,80 @@ wss.on('connection', (ws, req) =>
                             });
                         });
                     }
-                }
-                return;
-            }
-
-            // Track system if SystemId is present in message
-            if (message.SystemId) {
-                const systemId = message.SystemId;
-
-                // Clean up any duplicates before adding new system
-                cleanupDuplicateSystems(systemId);
-
-                // Add or update system connection if not already tracked
-                if (!connectedSystems.has(systemId)) {
-                    connectedSystems.set(systemId, new Set());
-                }
-                
-                // Mark this connection as the system if not already marked
-                if (!ws.isSystem) {
-                    ws.isSystem = true;
-                    ws.systemId = systemId;
-                    // Broadcast updated systems list after marking as system
-                    broadcastSystemsList();
+                    return;
                 }
 
-                // Forward status update to watching clients
-                const watchingClients = connectedSystems.get(systemId);
-                if (watchingClients) {
-                    // Forward the status update
-                    watchingClients.forEach(client => {
-                        if (client !== ws && client.readyState === WebSocket.OPEN) {
-                            client.send(rawData);
+                // Track system if SystemId is present in message
+                if (message.SystemId) {
+                    const systemId = message.SystemId;
+
+                    // Clean up any duplicates before adding new system
+                    cleanupDuplicateSystems(systemId);
+
+                    // Add or update system connection if not already tracked
+                    if (!connectedSystems.has(systemId)) {
+                        connectedSystems.set(systemId, new Set());
+                    }
+                    
+                    // Mark this connection as the system if not already marked
+                    if (!ws.isSystem) {
+                        ws.isSystem = true;
+                        ws.systemId = systemId;
+                        // Broadcast updated systems list after marking as system
+                        broadcastSystemsList();
+                    }
+
+                    // Forward status update to watching clients
+                    const watchingClients = connectedSystems.get(systemId);
+                    if (watchingClients) {
+                        // Forward the status update
+                        watchingClients.forEach(client => {
+                            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                                client.send(rawData);
+                            }
+                        });
+
+                        // Process any messages in the status update
+                        if (message.Messages && Array.isArray(message.Messages)) {
+                            message.Messages.forEach(msg => {
+                                const systemMessage = {
+                                    type: 'systemMessage',
+                                    message: msg.Message,
+                                    messageType: msg.MessageType,
+                                    source: msg.Source,
+                                    timestamp: msg.Timestamp,
+                                    username: wsClients.get(ws) || 'Unknown User'
+                                };
+                                
+                                watchingClients.forEach(client => {
+                                    if (client !== ws && client.readyState === WebSocket.OPEN) {
+                                        client.send(JSON.stringify(systemMessage));
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+
+                // Handle device messages
+                else if (message?.type === 'deviceMessage' || message?.type === 'chatMessage') {
+                    // Get the display name from message or stored client info
+                    const displayName = message.username || wsClients.get(ws) || 'Unknown User';
+                    
+                    // Send to all clients, marking the message as "self" for the sender
+                    wss.clients.forEach((client) => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            const broadcastMessage = {
+                                type: 'chatMessage',
+                                timestamp: message.timestamp || new Date().toISOString(),
+                                username: displayName,
+                                message: message.message,
+                                self: client === ws
+                            };
+                            client.send(JSON.stringify(broadcastMessage));
                         }
                     });
-
-                    // Process any messages in the status update
-                    if (message.Messages && Array.isArray(message.Messages)) {
-                        message.Messages.forEach(msg => {
-                            const systemMessage = {
-                                type: 'systemMessage',
-                                message: msg.Message,
-                                messageType: msg.MessageType,
-                                source: msg.Source,
-                                timestamp: msg.Timestamp
-                            };
-                            
-                            watchingClients.forEach(client => {
-                                if (client !== ws && client.readyState === WebSocket.OPEN) {
-                                    client.send(JSON.stringify(systemMessage));
-                                }
-                            });
-                        });
-                    }
                 }
-            }
-
-            // Handle device messages
-            else if (message?.type === 'deviceMessage') {
-                // Format the display name from the email
-                const displayName = formatDisplayName(message.email);
-                
-                // Send to all clients, marking the message as "self" for the sender
-                wss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        const broadcastMessage = {
-                            type: 'deviceMessage',
-                            timestamp: new Date().toISOString(),
-                            username: displayName,
-                            message: message.message,
-                            self: client === ws
-                        };
-                        client.send(JSON.stringify(broadcastMessage));
-                    }
-                });
             }
         } catch (error) {
             console.error('Error processing message:', error);
@@ -335,7 +347,7 @@ wss.on('connection', (ws, req) =>
             try {
                 const email = wsClients.get(ws) || 'Unknown User';
                 const broadcastMessage = {
-                    type: 'deviceMessage',
+                    type: 'chatMessage',
                     timestamp: new Date().toISOString(),
                     username: formatDisplayName(email),
                     message: data.toString()
@@ -369,7 +381,7 @@ wss.on('connection', (ws, req) =>
             if (connectedSystems.size === 0) {
                 const clients = connectedSystems.get(ws.systemId) || new Set();
                 clients.forEach(client => {
-                    if (client.readyState === ws.OPEN) {
+                    if (client.readyState === WebSocket.OPEN) {
                         waitingClients.add(client);
                         client.systemToWatch = null;
                     }
@@ -382,6 +394,76 @@ wss.on('connection', (ws, req) =>
         }
     });
 });
+
+const LOG_FILE = path.join(__dirname, 'logdata.json');
+/** @type {Array<{timestamp: string, type: string, data: any}>} */
+let messageLog = [];
+/** @type {fs.WriteStream} */
+let logStream;
+
+/**
+ * Initialize the log file and create write stream
+ * @returns {Promise<void>}
+ */
+async function initializeLogFile() {
+    try {
+        await fs.access(LOG_FILE);
+        const data = await fs.readFile(LOG_FILE, 'utf8');
+        messageLog = JSON.parse(data);
+    } catch {
+        await fs.writeFile(LOG_FILE, JSON.stringify([], null, 2));
+    }
+    
+    // Create write stream in append mode
+    logStream = fsSync.createWriteStream(LOG_FILE, { 
+        flags: 'a',
+        encoding: 'utf8'
+    });
+    
+    // Handle stream errors
+    logStream.on('error', (error) => {
+        console.error('Error writing to log file:', error);
+    });
+    
+    console.log('Log file initialized');
+}
+
+/**
+ * Append message to log file using write stream
+ * @param {any} message - The message to log
+ * @returns {Promise<void>}
+ */
+async function appendToLog(message) {
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        type: Array.isArray(message) ? 'systemMessages' : 'message',
+        data: message
+    };
+    messageLog.push(logEntry);
+    
+    // Write to stream with newline for easier reading
+    return new Promise((resolve, reject) => {
+        logStream.write(JSON.stringify(logEntry) + '\n', (error) => {
+            if (error) reject(error);
+            else resolve();
+        });
+    });
+}
+
+// Clean up write stream when server exits
+process.on('SIGINT', () => {
+    if (logStream) {
+        logStream.end(() => {
+            console.log('Log file stream closed');
+            process.exit(0);
+        });
+    }
+});
+
+// Initialize log file when server starts
+console.log('Opening Log file...');
+
+initializeLogFile().catch(console.error);
 
 server.listen(3000, () => {
     console.log('Server is running on port 3000');

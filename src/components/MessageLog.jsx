@@ -28,8 +28,32 @@ const MessageLog = ({ messages = [] }) => {
     }
   };
 
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2);
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${mm}/${dd}/${yy} ${hh}:${min}:${ss}`;
+  };
+
+  const formatMessage = (msg) => {
+    // All messages now use source field consistently
+    return msg.source ? `${msg.source}: ${msg.message}` : msg.message;
+  };
+
   // Create a copy and reverse to show newest first
   const sortedMessages = [...messages].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  // Debug log to check message contents
+  console.log('Messages:', sortedMessages.map(msg => ({
+    source: msg?.source,
+    message: msg?.message,
+    messageType: msg?.messageType,
+    timestamp: msg?.timestamp
+  })));
 
   return (
     <div className="overflow-hidden">
@@ -49,7 +73,7 @@ const MessageLog = ({ messages = [] }) => {
                 <td>
                   <div className={getStatusDot(msg?.messageType)} />
                 </td>
-                <td className="font-mono text-sm">{msg?.timestamp || '-'}</td>
+                <td className="font-mono text-sm">{formatTime(msg?.timestamp)}</td>
                 <td>{msg?.source || '-'}</td>
                 <td className={getStatusColor(msg?.messageType)}>{msg?.message || '-'}</td>
               </tr>

@@ -32,6 +32,14 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
             stateValue = "-";
             stateDesc = 'Flow State';
         }
+        if(units === '°C')
+        {
+            detailedData.LeftHeart.formattedTemp = Number(detailedData.LeftHeart.formattedTemp).toFixed(1);
+        }
+        if(units === '%')
+        {
+            detailedData.LeftHeart.CpuLoad = Number(detailedData.LeftHeart.CpuLoad ).toFixed(1);
+        }
 
         return React.createElement('div', { className: 'stat bg-base-300 shadow-xl rounded-xl p-4' },
             React.createElement('div', { className: 'flex justify-between items-start' },
@@ -209,7 +217,7 @@ export function createStrokeCard(label, targetStroke, actualStroke, iconFile = '
     return React.createElement('div', { className: `stat ${cardBgColor} shadow-xl rounded-xl p-4` },
         React.createElement('div', { className: 'flex justify-between items-start' },
             React.createElement('div', { className: 'flex-1 min-w-0 pr-4' },
-                React.createElement('div', { className: 'stat-title opacity-70' }, label),
+                React.createElement('div', { className: 'stat-title opacity-70 pt-1' }, label),
                 React.createElement('div', { className: 'stat-value text-base-content text-2xl' }, 
                     displayValue
                 ),
@@ -352,8 +360,8 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
         return timestamp;
     };
 
-    return React.createElement('div', { className: 'flex flex-wrap justify-between items-center mb-4 gap-2' },
-      React.createElement('div', null,
+    return React.createElement('div', { className: 'flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 w-full' },
+      React.createElement('div', { className: 'w-full sm:w-auto order-1' },
         React.createElement('h2', { className: 'text-lg font-bold items-center gap-2 w-44' },
           'Status',
           React.createElement('div', {
@@ -369,7 +377,14 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
           `Remote: ${systemId}`
         )
       ),
-      React.createElement('div', { className: 'flex gap-2' },
+
+      React.createElement('img', {
+        src: theme === 'light' ? '/logo-light-mode.png' : '/logo.png',
+        alt: 'Scandinavian Real Heart AB',
+        className: 'h-8 order-2 sm:order-3 my-2 sm:my-0'
+      }),
+
+      React.createElement('div', { className: 'flex gap-2 order-3 sm:order-2 w-full sm:w-auto justify-center' },
         React.createElement('button', {
             className: 'btn btn-primary w-[120px] sm:w-[200px] px-2 sm:px-4 text-sm sm:text-base shadow-lg',
             onClick: () => {
@@ -383,11 +398,6 @@ export function createHeader(status, lastUpdate, isDetailedView, onToggleView, t
             onClick: onOpenChat
         }, 'Send Message')
       ),
-      React.createElement('img', {
-        src: theme === 'light' ? '/logo-light-mode.png' : '/logo.png',
-        alt: 'Scandinavian Real Heart AB',
-        className: 'h-8 ml-4 mr-4'
-      })
     );
 }
 
