@@ -55,9 +55,13 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     let displayValue = '-';
     let unitsValue = units;  // Store the passed-in units
 
-    // If value is an object with PrimaryValue, use that
+    // If value is an object with PrimaryValue, use that (for Jotai atom sensor objects)
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
         displayValue = value.PrimaryValue || '-';
+        // Use unit from object if no units were passed in
+        if (!unitsValue && value.unit) {
+            unitsValue = value.unit;
+        }
     } 
     else if (value != null && typeof value === 'string') 
     {
@@ -83,26 +87,15 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     } 
     else if (value != null) 
     {
+        // Handle numeric values from Jotai atoms
         displayValue = String(value);
     }
 
     // Determine background color based on BackColor if value is an object
     let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default background and border with consistent width
     
-    // Special case for right cardiac output - copy left heart's border color
-    if (label === 'Cardiac Out' && value === detailedData?.RightHeart?.CardiacOutput) {
-        const leftHeartCardiacOutput = detailedData?.LeftHeart?.CardiacOutput;
-        if (leftHeartCardiacOutput?.BackColor) {
-            const color = leftHeartCardiacOutput.BackColor.toLowerCase();
-            if (color === 'yellow') {
-                cardBgColor = 'bg-base-300 border-4 border-yellow-500';
-            } else if (color === 'red') {
-                cardBgColor = 'bg-base-300 border-4 border-red-500';
-            }
-        }
-    } 
-    // Normal color determination for other cards
-    else if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
+    // Check for BackColor property in value object (for objects with alert states)
+    if (value && typeof value === 'object' && 'BackColor' in value && value.BackColor) {
         const color = value.BackColor.toLowerCase();
         if (color === 'yellow') {
             cardBgColor = 'bg-base-300 border-4 border-yellow-500';
@@ -154,6 +147,7 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
     let displayValue = '-';
     let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default with consistent border width
 
+    // Handle object values from Jotai atoms (with PrimaryValue property)
     if (avgPressure && typeof avgPressure === 'object') {
         displayValue = avgPressure.PrimaryValue || '-';
         
@@ -167,11 +161,14 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
             }
         }
     } else {
-        displayValue = avgPressure || '-';
+        // Handle numeric values from Jotai atoms
+        displayValue = avgPressure != null ? avgPressure : '-';
     }
+    
     // Round max and min pressure values to 1 decimal place
-    const formattedMax = Number(maxPressure).toFixed(1);
-    const formattedMin = Number(minPressure).toFixed(1);
+    // Handle both numeric values and potential null/undefined from atoms
+    const formattedMax = maxPressure != null ? Number(maxPressure).toFixed(1) : '-';
+    const formattedMin = minPressure != null ? Number(minPressure).toFixed(1) : '-';
 
     return React.createElement('div', { className: `stat ${cardBgColor} shadow-xl rounded-xl p-4` },
         React.createElement('div', { className: 'flex justify-between items-start' },
@@ -196,13 +193,14 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
 }
 
 export function createStrokeCard(label, targetStroke, actualStroke, iconFile = 'heart.png') {
-    // Extract display value and determine border color if avgPressure is an object
+    // Extract display value and determine border color
     let displayValue = '-';
     let cardBgColor = 'bg-base-300 border-4 border-base-300'; // default with consistent border width
 
-    // Round max and min pressure values to 1 decimal place
-    const formattedTarget = targetStroke ? Number(targetStroke).toFixed(1) : '-';
-    const formattedActual = actualStroke ? Number(actualStroke).toFixed(1) : '-';
+    // Round stroke length values to 1 decimal place
+    // Handle numeric values from Jotai atoms, including 0 as valid
+    const formattedTarget = targetStroke != null ? Number(targetStroke).toFixed(1) : '-';
+    const formattedActual = actualStroke != null ? Number(actualStroke).toFixed(1) : '-';
 
     displayValue = `${formattedTarget}/${formattedActual}`;
 

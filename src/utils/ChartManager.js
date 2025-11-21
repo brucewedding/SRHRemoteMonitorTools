@@ -36,7 +36,7 @@ class ChartManager {
             powerConsumption: null,
             atrialPressure: null,
             cardiacOutput: null,
-            strokeVolume: null,
+            strokeLength: null,
             lowPressures: null,
             highPressures: null
         };
@@ -46,7 +46,7 @@ class ChartManager {
             powerConsumption: [],
             atrialPressure: [],
             cardiacOutput: [],
-            strokeVolume: [],
+            strokeLength: [],
             lowPressures: [],
             highPressures: []
         };
@@ -111,9 +111,9 @@ class ChartManager {
                     }
                 ]
             },
-            strokeVolume: {
-                ctx: 'strokeVolumeChart',
-                label: 'Stroke Vol',
+            strokeLength: {
+                ctx: 'strokeLengthChart',
+                label: 'Stroke Length',
                 minY: 0,
                 maxY: 60,
                 datasets: [
@@ -160,71 +160,105 @@ class ChartManager {
                 ]
             }
         };
+        
+        // Store last known values for handling missing data
+        this.lastKnownValues = {
+            heartRate: 0,
+            leftPower: 0,
+            rightPower: 0,
+            leftAtrialPressure: 0,
+            rightAtrialPressure: 0,
+            leftCardiacOutput: 0,
+            rightCardiacOutput: 0,
+            leftStrokeLength: 0,
+            rightStrokeLength: 0,
+            cvpSensor: 0,
+            papSensor: 0,
+            aopSensor: 0,
+            artPressSensor: 0
+        };
     }
 
     updateStoredChartData(data) {
-        const timeStr = new Date(data.Timestamp || data.LocalClock).toLocaleTimeString();
+        // Validates: Requirements 11.1, 11.2, 11.3, 11.4
+        const timeStr = new Date(data.Timestamp || data.LocalClock || Date.now()).toLocaleTimeString();
         
         // Extract and parse numeric values, ensuring we handle both string and object formats
-        const extractNumericValue = (value) => {
-            if (value === null || value === undefined) return 0;
-            if (typeof value === 'object' && 'PrimaryValue' in value) {
-                return parseFloat(value.PrimaryValue) || 0;
+        // Handle missing data by using zero or last known value (Requirement 11.4)
+        const extractNumericValue = (value, lastKnownKey) => {
+            if (value === null || value === undefined) {
+                // Use last known value if available, otherwise use 0
+                return this.lastKnownValues[lastKnownKey] || 0;
             }
-            return parseFloat(value) || 0;
+            if (typeof value === 'object' && 'PrimaryValue' in value) {
+                const numValue = parseFloat(value.PrimaryValue);
+                if (!isNaN(numValue)) {
+                    this.lastKnownValues[lastKnownKey] = numValue;
+                    return numValue;
+                }
+                return this.lastKnownValues[lastKnownKey] || 0;
+            }
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                this.lastKnownValues[lastKnownKey] = numValue;
+                return numValue;
+            }
+            return this.lastKnownValues[lastKnownKey] || 0;
         };
 
         // Get heart data with proper null checks
         const leftHeart = data.LeftHeart || {};
         const rightHeart = data.RightHeart || {};
 
-        // Create data entries with proper value extraction
+        // Create data entries with proper value extraction (Requirement 11.1)
+        // Replace stroke volume with stroke length (Requirement 11.2)
         const entries = {
-            heartRate: [[extractNumericValue(data.HeartRate)]],
+            heartRate: [[extractNumericValue(data.HeartRate, 'heartRate')]],
             powerConsumption: [
                 [
-                    extractNumericValue(leftHeart.PowerConsumption),
-                    extractNumericValue(rightHeart.PowerConsumption)
+                    extractNumericValue(leftHeart.PowerConsumption, 'leftPower'),
+                    extractNumericValue(rightHeart.PowerConsumption, 'rightPower')
                 ]
             ],
             atrialPressure: [
                 [
-                    extractNumericValue(leftHeart.AtrialPressure),
-                    extractNumericValue(rightHeart.AtrialPressure)
+                    extractNumericValue(leftHeart.AtrialPressure, 'leftAtrialPressure'),
+                    extractNumericValue(rightHeart.AtrialPressure, 'rightAtrialPressure')
                 ]
             ],
             cardiacOutput: [
                 [
-                    extractNumericValue(leftHeart.CardiacOutput),
-                    extractNumericValue(rightHeart.CardiacOutput)
+                    extractNumericValue(leftHeart.CardiacOutput, 'leftCardiacOutput'),
+                    extractNumericValue(rightHeart.CardiacOutput, 'rightCardiacOutput')
                 ]
             ],
-            strokeVolume: [
+            strokeLength: [
                 [
-                    extractNumericValue(leftHeart.StrokeVolume),
-                    extractNumericValue(rightHeart.StrokeVolume)
+                    extractNumericValue(leftHeart.ActualStrokeLen, 'leftStrokeLength'),
+                    extractNumericValue(rightHeart.ActualStrokeLen, 'rightStrokeLength')
                 ]
             ],
             lowPressures: [
                 [
-                    extractNumericValue(data.CVPSensor),
-                    extractNumericValue(data.PAPSensor)
+                    extractNumericValue(data.CVPSensor, 'cvpSensor'),
+                    extractNumericValue(data.PAPSensor, 'papSensor')
                 ]
             ],
             highPressures: [
                 [
-                    extractNumericValue(data.AoPSensor),
-                    extractNumericValue(data.ArtPressSensor)
+                    extractNumericValue(data.AoPSensor, 'aopSensor'),
+                    extractNumericValue(data.ArtPressSensor, 'artPressSensor')
                 ]
             ]
         };
 
-        // Update chart data
+        // Update chart data with buffer limiting (Requirement 11.3)
         Object.entries(entries).forEach(([key, values]) => {
             this.chartDataRef[key].push({
                 time: timeStr,
                 values: values[0]
             });
+            // Ensure chart buffer is bounded to MAX_DATA_POINTS
             if (this.chartDataRef[key].length > MAX_DATA_POINTS) {
                 this.chartDataRef[key].shift();
             }
