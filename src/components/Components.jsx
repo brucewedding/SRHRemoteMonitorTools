@@ -57,7 +57,13 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
 
     // If value is an object with PrimaryValue, use that (for Jotai atom sensor objects)
     if (value && typeof value === 'object' && 'PrimaryValue' in value) {
-        displayValue = value.PrimaryValue || '-';
+        const primaryValue = value.PrimaryValue;
+        // Format numeric PrimaryValue with 2 decimal places
+        if (typeof primaryValue === 'number') {
+            displayValue = primaryValue.toFixed(2);
+        } else {
+            displayValue = primaryValue || '-';
+        }
         // Use unit from object if no units were passed in
         if (!unitsValue && value.unit) {
             unitsValue = value.unit;
@@ -69,7 +75,9 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
         const match = value.match(/^([\d.]+)(\s*(?:L\/min|mL|mm|\w+))?$/);
         if (match) 
         {
-            displayValue = match[1];
+            // Format numeric string values with 2 decimal places
+            const numValue = parseFloat(match[1]);
+            displayValue = isNaN(numValue) ? match[1] : numValue.toFixed(2);
             // Only use extracted units if no units were passed in
             if (!unitsValue) {
                 unitsValue = match[2] ? 
@@ -87,8 +95,12 @@ export function createDetailCard(label, value, iconFile = 'heart.png', color = '
     } 
     else if (value != null) 
     {
-        // Handle numeric values from Jotai atoms
-        displayValue = String(value);
+        // Handle numeric values from Jotai atoms - format with 2 decimal places
+        if (typeof value === 'number') {
+            displayValue = value.toFixed(2);
+        } else {
+            displayValue = String(value);
+        }
     }
 
     // Determine background color based on BackColor if value is an object
@@ -149,7 +161,13 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
 
     // Handle object values from Jotai atoms (with PrimaryValue property)
     if (avgPressure && typeof avgPressure === 'object') {
-        displayValue = avgPressure.PrimaryValue || '-';
+        const primaryValue = avgPressure.PrimaryValue;
+        // Format numeric PrimaryValue with 2 decimal places
+        if (typeof primaryValue === 'number') {
+            displayValue = primaryValue.toFixed(2);
+        } else {
+            displayValue = primaryValue || '-';
+        }
         
         // Apply color border based on BackColor property
         if (avgPressure.BackColor) {
@@ -161,8 +179,12 @@ export function createPressureCard(label, avgPressure, maxPressure, minPressure,
             }
         }
     } else {
-        // Handle numeric values from Jotai atoms
-        displayValue = avgPressure != null ? avgPressure : '-';
+        // Handle numeric values from Jotai atoms - format with 2 decimal places
+        if (typeof avgPressure === 'number') {
+            displayValue = avgPressure.toFixed(2);
+        } else {
+            displayValue = avgPressure != null ? avgPressure : '-';
+        }
     }
     
     // Round max and min pressure values to 1 decimal place

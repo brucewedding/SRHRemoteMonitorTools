@@ -4,6 +4,8 @@
  * Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5
  */
 
+const CircularBuffer = require('./CircularBuffer');
+
 /**
  * Base class for message type handlers
  */
@@ -284,9 +286,9 @@ class StrokewisePressureHandler extends MessageTypeHandler {
 
 /**
  * Handler for StreamingPressure messages (UDP)
- * Buffers streaming pressure data for real-time display
+ * Buffers streaming pressure data for real-time display using circular buffers
  * 
- * Validates: Requirement 2.10
+ * Validates: Requirement 2.10, Requirements 1.1, 1.4, 1.5
  */
 class StreamingPressureHandler extends MessageTypeHandler {
   /**
@@ -300,40 +302,48 @@ class StreamingPressureHandler extends MessageTypeHandler {
     // Initialize streaming pressure buffer if it doesn't exist
     if (!state.StreamingPressure) {
       state.StreamingPressure = {
-        leftAtrial: [],
-        rightAtrial: [],
-        leftVentricular: [],
-        rightVentricular: [],
-        aortic: [],
-        pulmonaryArterial: [],
+        leftAtrial: null,
+        rightAtrial: null,
+        leftVentricular: null,
+        rightVentricular: null,
+        aortic: null,
+        pulmonaryArterial: null,
         sampleRate: 0,
-        unit: 'mmHg'
+        unit: 'mmHg',
+        lastUpdate: Date.now()
       };
     }
     
-    // Buffer streaming pressure data
+    // Buffer streaming pressure data using circular buffers
+    // Only initialize buffers for non-null channels
     if (data.leftAtrial && data.leftAtrial !== null) {
-      state.StreamingPressure.leftAtrial = data.leftAtrial;
+      this.initializeChannelBuffer(state, 'leftAtrial');
+      this.addToChannelBuffer(state, 'leftAtrial', data.leftAtrial);
     }
     
     if (data.rightAtrial && data.rightAtrial !== null) {
-      state.StreamingPressure.rightAtrial = data.rightAtrial;
+      this.initializeChannelBuffer(state, 'rightAtrial');
+      this.addToChannelBuffer(state, 'rightAtrial', data.rightAtrial);
     }
     
     if (data.leftVentricular && data.leftVentricular !== null) {
-      state.StreamingPressure.leftVentricular = data.leftVentricular;
+      this.initializeChannelBuffer(state, 'leftVentricular');
+      this.addToChannelBuffer(state, 'leftVentricular', data.leftVentricular);
     }
     
     if (data.rightVentricular && data.rightVentricular !== null) {
-      state.StreamingPressure.rightVentricular = data.rightVentricular;
+      this.initializeChannelBuffer(state, 'rightVentricular');
+      this.addToChannelBuffer(state, 'rightVentricular', data.rightVentricular);
     }
     
     if (data.aortic && data.aortic !== null) {
-      state.StreamingPressure.aortic = data.aortic;
+      this.initializeChannelBuffer(state, 'aortic');
+      this.addToChannelBuffer(state, 'aortic', data.aortic);
     }
     
     if (data.pulmonaryArterial && data.pulmonaryArterial !== null) {
-      state.StreamingPressure.pulmonaryArterial = data.pulmonaryArterial;
+      this.initializeChannelBuffer(state, 'pulmonaryArterial');
+      this.addToChannelBuffer(state, 'pulmonaryArterial', data.pulmonaryArterial);
     }
     
     // Update sample rate and unit
@@ -343,6 +353,47 @@ class StreamingPressureHandler extends MessageTypeHandler {
     
     if (data.unit) {
       state.StreamingPressure.unit = data.unit;
+    }
+    
+    // Update lastUpdate timestamp when buffers are modified
+    state.StreamingPressure.lastUpdate = Date.now();
+  }
+  
+  /**
+   * Initialize circular buffer for a pressure channel
+   * Only creates buffer if it doesn't exist (for non-null channels)
+   * @param {Object} state - Current state
+   * @param {string} channel - Channel name (e.g., 'leftAtrial')
+   * @private
+   */
+  initializeChannelBuffer(state, channel) {
+    // Only initialize if buffer doesn't exist or is not a CircularBuffer
+    if (!state.StreamingPressure[channel] || !(state.StreamingPressure[channel] instanceof CircularBuffer)) {
+      state.StreamingPressure[channel] = new CircularBuffer(1000);
+    }
+  }
+  
+  /**
+   * Add data to channel buffer using circular buffer
+   * @param {Object} state - Current state
+   * @param {string} channel - Channel name
+   * @param {Array} data - Pressure data array
+   * @private
+   */
+  addToChannelBuffer(state, channel, data) {
+    const buffer = state.StreamingPressure[channel];
+    
+    // DEBUG: Log when adding data to buffers
+    if (Math.random() < 0.001) { // Sample 0.1% of calls
+      const dataSize = Array.isArray(data) ? data.length : 1;
+      console.log(`[DEBUG] Adding ${dataSize} points to ${channel}, buffer size before: ${buffer.size()}, capacity: ${buffer.capacity}`);
+    }
+    
+    // Add each data point to the circular buffer
+    if (Array.isArray(data)) {
+      data.forEach(point => {
+        buffer.push(point);
+      });
     }
   }
 }

@@ -86,6 +86,8 @@ class StateAggregator {
     this.lastTelemetryTime = Date.now();
     this.leftHeartLastUpdate = Date.now();
     this.rightHeartLastUpdate = Date.now();
+    this.cachedState = null;
+    this.cacheInvalidated = true;
   }
 
   /**
@@ -200,6 +202,14 @@ class StateAggregator {
    * @returns {AggregatedState} Current state with availability indicators
    */
   getState() {
+    // Return cached state if nothing has changed
+    // This prevents creating new objects on every call
+    if (!this.cacheInvalidated && this.cachedState) {
+      // Update timestamp on cached state
+      this.cachedState.Timestamp = Date.now();
+      return this.cachedState;
+    }
+    
     const now = Date.now();
     const TELEMETRY_TIMEOUT = 30000; // 30 seconds
     const SIDE_TIMEOUT = 10000; // 10 seconds for individual pump side
@@ -211,17 +221,42 @@ class StateAggregator {
     const leftHeartAvailable = (now - this.leftHeartLastUpdate) < SIDE_TIMEOUT;
     const rightHeartAvailable = (now - this.rightHeartLastUpdate) < SIDE_TIMEOUT;
     
-    return { 
-      ...this.state,
-      _telemetryStatus: {
-        noDataReceived,
-        leftHeartAvailable,
-        rightHeartAvailable,
-        lastTelemetryTime: this.lastTelemetryTime,
-        leftHeartLastUpdate: this.leftHeartLastUpdate,
-        rightHeartLastUpdate: this.rightHeartLastUpdate
-      }
+    // Convert CircularBuffers to arrays for JSON serialization
+    const state = { ...this.state };
+    if (state.StreamingPressure) {
+      const CircularBuffer = require('./CircularBuffer');
+      state.StreamingPressure = { ...state.StreamingPressure };
+      
+      // Convert each channel's CircularBuffer to array
+      const channels = ['leftAtrial', 'rightAtrial', 'leftVentricular', 'rightVentricular', 'aortic', 'pulmonaryArterial'];
+      channels.forEach(channel => {
+        if (state.StreamingPressure[channel] instanceof CircularBuffer) {
+          const arr = state.StreamingPressure[channel].toArray();
+          
+          // DEBUG: Monitor buffer growth (sample 1% of calls)
+          if (Math.random() < 0.01) {
+            console.log(`[DEBUG] CircularBuffer ${channel}: ${arr.length} items, buffer capacity: ${state.StreamingPressure[channel].capacity}`);
+          }
+          
+          state.StreamingPressure[channel] = arr;
+        }
+      });
+    }
+    
+    state._telemetryStatus = {
+      noDataReceived,
+      leftHeartAvailable,
+      rightHeartAvailable,
+      lastTelemetryTime: this.lastTelemetryTime,
+      leftHeartLastUpdate: this.leftHeartLastUpdate,
+      rightHeartLastUpdate: this.rightHeartLastUpdate
     };
+    
+    // Cache the state
+    this.cachedState = state;
+    this.cacheInvalidated = false;
+    
+    return state;
   }
 
   /**
@@ -277,6 +312,9 @@ class StateAggregator {
    * @param {Object} message - Parsed telemetry message
    */
   updateState(message) {
+    // Invalidate cache when state changes
+    this.cacheInvalidated = true;
+    
     // Update timestamp
     this.state.Timestamp = message.timestampUtc || Date.now();
     

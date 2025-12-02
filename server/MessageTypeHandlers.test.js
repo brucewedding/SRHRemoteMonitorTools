@@ -443,8 +443,8 @@ test('StreamingPressureHandler buffers pulmonary arterial streaming data', () =>
 
   handler.handle(data, aggregator);
 
-  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.length, 5, 'Should buffer 5 samples');
-  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial[0], 25.0, 'First sample should be 25.0');
+  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.size(), 5, 'Should buffer 5 samples');
+  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.toArray()[0], 25.0, 'First sample should be 25.0');
   assertEqual(aggregator.state.StreamingPressure.sampleRate, 1000, 'Sample rate should be 1000');
   assertEqual(aggregator.state.StreamingPressure.unit, 'mmHg', 'Unit should be mmHg');
 });
@@ -467,8 +467,8 @@ test('StreamingPressureHandler buffers left atrial streaming data', () => {
 
   handler.handle(data, aggregator);
 
-  assertEqual(aggregator.state.StreamingPressure.leftAtrial.length, 3, 'Should buffer 3 samples');
-  assertEqual(aggregator.state.StreamingPressure.leftAtrial[1], 11.0, 'Second sample should be 11.0');
+  assertEqual(aggregator.state.StreamingPressure.leftAtrial.size(), 3, 'Should buffer 3 samples');
+  assertEqual(aggregator.state.StreamingPressure.leftAtrial.toArray()[1], 11.0, 'Second sample should be 11.0');
 });
 
 // Test 24: StreamingPressureHandler handles multiple pressure channels
@@ -489,12 +489,12 @@ test('StreamingPressureHandler handles multiple pressure channels', () => {
 
   handler.handle(data, aggregator);
 
-  assertEqual(aggregator.state.StreamingPressure.leftAtrial.length, 2, 'Left atrial should have 2 samples');
-  assertEqual(aggregator.state.StreamingPressure.rightAtrial.length, 2, 'Right atrial should have 2 samples');
-  assertEqual(aggregator.state.StreamingPressure.leftVentricular.length, 2, 'Left ventricular should have 2 samples');
-  assertEqual(aggregator.state.StreamingPressure.rightVentricular.length, 2, 'Right ventricular should have 2 samples');
-  assertEqual(aggregator.state.StreamingPressure.aortic.length, 2, 'Aortic should have 2 samples');
-  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.length, 2, 'Pulmonary arterial should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.leftAtrial.size(), 2, 'Left atrial should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.rightAtrial.size(), 2, 'Right atrial should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.leftVentricular.size(), 2, 'Left ventricular should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.rightVentricular.size(), 2, 'Right ventricular should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.aortic.size(), 2, 'Aortic should have 2 samples');
+  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.size(), 2, 'Pulmonary arterial should have 2 samples');
 });
 
 // Test 25: StateAggregator integration - StrokewisePressure
@@ -542,7 +542,7 @@ test('StateAggregator updateState uses correct handler for StreamingPressure', (
 
   aggregator.updateState(message);
 
-  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.length, 3, 'Should buffer 3 samples');
+  assertEqual(aggregator.state.StreamingPressure.pulmonaryArterial.size(), 3, 'Should buffer 3 samples');
   assertEqual(aggregator.state.Timestamp, 1234567894, 'Timestamp should be updated');
 });
 

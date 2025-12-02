@@ -673,7 +673,7 @@ function CombinedDashboard() {
 
                 title: 'Power Consumption',
 
-                value: `L: ${leftPower} W R: ${rightPower} W`,
+                value: `L: ${Number(leftPower).toFixed(2)} W R: ${Number(rightPower).toFixed(2)} W`,
 
                 color: 'blue',
 
@@ -685,7 +685,7 @@ function CombinedDashboard() {
 
                 title: 'Atrial Pressure',
 
-                value: `L: ${leftAtrialPressure} mmHg R: ${rightAtrialPressure} mmHg`,
+                value: `L: ${Number(leftAtrialPressure).toFixed(2)} mmHg R: ${Number(rightAtrialPressure).toFixed(2)} mmHg`,
 
                 color: 'blue',
 
@@ -697,7 +697,7 @@ function CombinedDashboard() {
 
                 title: 'Cardiac Output',
 
-                value: `L: ${leftCardiacOutput} L/min R: ${rightCardiacOutput} L/min`,
+                value: `L: ${Number(leftCardiacOutput).toFixed(2)} L/min R: ${Number(rightCardiacOutput).toFixed(2)} L/min`,
 
                 color: 'blue',
 
@@ -709,7 +709,7 @@ function CombinedDashboard() {
 
                 title: 'Stroke Length',
 
-                value: `L: ${leftActualStrokeLen} mm R: ${rightActualStrokeLen} mm`,
+                value: `L: ${Number(leftActualStrokeLen).toFixed(2)} mm R: ${Number(rightActualStrokeLen).toFixed(2)} mm`,
 
                 color: 'blue',
 
@@ -721,7 +721,7 @@ function CombinedDashboard() {
 
                 title: 'Low Pressures',
 
-                value: `CVP: ${cvpSensor?.PrimaryValue || 0} mmHg PAP: ${papSensor?.PrimaryValue || 0} mmHg`,
+                value: `CVP: ${Number(cvpSensor?.PrimaryValue || 0).toFixed(2)} mmHg PAP: ${Number(papSensor?.PrimaryValue || 0).toFixed(2)} mmHg`,
 
                 color: 'blue',
 
@@ -733,7 +733,7 @@ function CombinedDashboard() {
 
                 title: 'High Pressures',
 
-                value: `AoP: ${aopSensor?.PrimaryValue || 0} mmHg Art: ${artPressSensor?.PrimaryValue || 0} mmHg`,
+                value: `AoP: ${Number(aopSensor?.PrimaryValue || 0).toFixed(2)} mmHg Art: ${Number(artPressSensor?.PrimaryValue || 0).toFixed(2)} mmHg`,
 
                 color: 'blue',
 
