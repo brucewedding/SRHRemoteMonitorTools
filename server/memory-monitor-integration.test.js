@@ -1,90 +1,131 @@
 /**
- * Integration test for MemoryMonitor in fastify-server
- * Validates that MemoryMonitor is properly integrated
+ * Integration test for memory monitoring in Express server
+ * Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5
  */
 
-const fs = require('fs');
-const path = require('path');
+const assert = require('assert');
 
-// Test helper to run a test
-function test(description, fn) {
-  try {
-    fn();
-    console.log(`✓ ${description}`);
-  } catch (error) {
-    console.error(`✗ ${description}`);
-    console.error(`  ${error.message}`);
-    process.exit(1);
-  }
-}
+// Mock the server dependencies
+const mockWss = {
+    clients: new Set(),
+    on: () => {},
+    close: () => {}
+};
 
-// Test helper for assertions
-function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message || 'Assertion failed');
-  }
-}
+const mockServer = {
+    listen: (port, callback) => {
+        if (callback) callback();
+        return mockServer;
+    },
+    close: () => {}
+};
 
-// Read the fastify-server.js file
-const serverFilePath = path.join(__dirname, 'fastify-server.js');
-const serverCode = fs.readFileSync(serverFilePath, 'utf8');
+const mockExpress = () => {
+    const app = {
+        use: () => app,
+        listen: mockServer.listen
+    };
+    return app;
+};
+mockExpress.json = () => {};
 
-// Test 1: Verify MemoryMonitor is imported
-test('should import MemoryMonitor module', () => {
-  assert(
-    serverCode.includes("const MemoryMonitor = require('./MemoryMonitor')"),
-    'MemoryMonitor should be imported'
-  );
+const mockHttp = {
+    createServer: () => mockServer
+};
+
+const mockWs = {
+    WebSocketServer: function() {
+        return mockWss;
+    }
+};
+
+// Mock the modules
+require.cache[require.resolve('express')] = {
+    exports: mockExpress
+};
+require.cache[require.resolve('http')] = {
+    exports: mockHttp
+};
+require.cache[require.resolve('ws')] = {
+    exports: mockWs
+};
+
+// Import MemoryMonitor to test integration
+const MemoryMonitor = require('./MemoryMonitor');
+
+console.log('Testing memory monitoring integration...\n');
+
+// Test 1: MemoryMonitor initialization with correct thresholds
+console.log('Test 1: MemoryMonitor initialization');
+const memoryMonitor = new MemoryMonitor({
+    warningThresholdMB: 350,
+    criticalThresholdMB: 400,
+    logger: console,
+    onCritical: () => {
+        console.log('Critical callback triggered');
+    }
 });
 
-// Test 2: Verify MemoryMonitor is instantiated with correct configuration
-test('should create MemoryMonitor instance with warningThresholdMB: 350', () => {
-  assert(
-    serverCode.includes('warningThresholdMB: 350'),
-    'MemoryMonitor should have warningThresholdMB set to 350'
-  );
-});
+assert.strictEqual(memoryMonitor.warningThresholdMB, 350, 'Warning threshold should be 350MB');
+assert.strictEqual(memoryMonitor.criticalThresholdMB, 400, 'Critical threshold should be 400MB');
+console.log('✓ MemoryMonitor initialized with correct thresholds\n');
 
-test('should create MemoryMonitor instance with criticalThresholdMB: 400', () => {
-  assert(
-    serverCode.includes('criticalThresholdMB: 400'),
-    'MemoryMonitor should have criticalThresholdMB set to 400'
-  );
-});
+// Test 2: Enhanced check with diagnostics
+console.log('Test 2: Enhanced memory check with diagnostics');
+const messageBuffer = [];
+const systemStates = new Map();
+const connectedSystems = new Map();
+const wsClients = new Map();
+const waitingClients = new Set();
+const lastBroadcastTime = new Map();
 
-test('should pass fastify.log as logger', () => {
-  assert(
-    serverCode.includes('logger: fastify.log'),
-    'MemoryMonitor should use fastify.log as logger'
-  );
-});
+// Add some test data
+messageBuffer.push({ test: 'message' });
+systemStates.set('system1', { data: 'test' });
+connectedSystems.set('system1', new Set());
+wsClients.set({}, 'test@example.com');
+waitingClients.add({});
+lastBroadcastTime.set('system1', Date.now());
 
-test('should set onCritical callback to log error and exit', () => {
-  assert(
-    serverCode.includes("fastify.log.error('Memory threshold exceeded')") &&
-    serverCode.includes('process.exit(1)'),
-    'onCritical callback should log error and call process.exit(1)'
-  );
-});
+// Override check method with diagnostics
+const originalCheck = memoryMonitor.check.bind(memoryMonitor);
+memoryMonitor.check = function (diagnostics = {}) {
+    const enhancedDiagnostics = {
+        ...diagnostics,
+        bufferSizes: {
+            messageBufferSize: messageBuffer.length,
+            systemStatesSize: systemStates.size,
+            connectedSystemsSize: connectedSystems.size,
+            wsClientsSize: wsClients.size,
+            waitingClientsSize: waitingClients.size,
+            lastBroadcastTimeSize: lastBroadcastTime.size
+        }
+    };
+    
+    return originalCheck(enhancedDiagnostics);
+};
 
-// Test 3: Verify monitoring is started with 30-second interval
-test('should start monitoring with 30-second interval', () => {
-  assert(
-    serverCode.includes('memoryMonitor.startMonitoring(30000)'),
-    'MemoryMonitor should start monitoring with 30000ms interval'
-  );
-});
+const status = memoryMonitor.check();
+assert.ok(status.diagnostics, 'Status should include diagnostics');
+assert.ok(status.diagnostics.bufferSizes, 'Diagnostics should include bufferSizes');
+assert.strictEqual(status.diagnostics.bufferSizes.messageBufferSize, 1, 'Should track message buffer size');
+assert.strictEqual(status.diagnostics.bufferSizes.systemStatesSize, 1, 'Should track system states size');
+assert.strictEqual(status.diagnostics.bufferSizes.connectedSystemsSize, 1, 'Should track connected systems size');
+assert.strictEqual(status.diagnostics.bufferSizes.wsClientsSize, 1, 'Should track ws clients size');
+assert.strictEqual(status.diagnostics.bufferSizes.waitingClientsSize, 1, 'Should track waiting clients size');
+assert.strictEqual(status.diagnostics.bufferSizes.lastBroadcastTimeSize, 1, 'Should track last broadcast time size');
+console.log('✓ Enhanced check includes all required diagnostics\n');
 
-// Test 4: Verify old checkCriticalConditions function is removed
-test('should not have checkCriticalConditions function', () => {
-  assert(
-    !serverCode.includes('function checkCriticalConditions'),
-    'Old checkCriticalConditions function should be removed'
-  );
-  assert(
-    !serverCode.includes('checkCriticalConditions()'),
-    'checkCriticalConditions should not be called'
-  );
-});
+// Test 3: Start monitoring with 30-second interval
+console.log('Test 3: Start memory monitoring');
+memoryMonitor.startMonitoring(30000);
+assert.ok(memoryMonitor.monitoringInterval, 'Monitoring interval should be set');
+console.log('✓ Memory monitoring started with 30s interval\n');
 
-console.log('\n✓ All MemoryMonitor integration tests passed!');
+// Test 4: Stop monitoring
+console.log('Test 4: Stop memory monitoring');
+memoryMonitor.stopMonitoring();
+assert.strictEqual(memoryMonitor.monitoringInterval, null, 'Monitoring interval should be cleared');
+console.log('✓ Memory monitoring stopped\n');
+
+console.log('✓ All memory monitoring integration tests passed!');

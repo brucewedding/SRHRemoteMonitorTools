@@ -51,8 +51,6 @@ import {
     voltageAtom,
     cpuLoadAtom,
     accelerometerAtom,
-    flowLimitStateAtom,
-    flowLimitAtom,
     useMedicalSensorAtom,
     lastUpdateAtom,
     noDataReceivedAtom,
@@ -113,8 +111,6 @@ function CombinedDashboard() {
     const voltage = useAtomValue(voltageAtom);
     const cpuLoad = useAtomValue(cpuLoadAtom);
     const accelerometer = useAtomValue(accelerometerAtom);
-    const flowLimitState = useAtomValue(flowLimitStateAtom);
-    const flowLimit = useAtomValue(flowLimitAtom);
     const useMedicalSensor = useAtomValue(useMedicalSensorAtom);
     const lastUpdate = useAtomValue(lastUpdateAtom);
     
@@ -418,26 +414,6 @@ function CombinedDashboard() {
                                 React.createElement('span', { 
                                     className: 'badge w-full text-center',
                                     style: { 
-                                        backgroundColor: stripAlphaChannel(statusData.ExtLeft.Color),
-                                        color: '#000000'
-                                    }
-                                }, statusData.ExtLeft.Text),
-                                React.createElement('span', { className: 'text-xs mt-1' }, 'Ext L')
-                            ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                                React.createElement('span', { 
-                                    className: 'badge w-full text-center',
-                                    style: { 
-                                        backgroundColor: stripAlphaChannel(statusData.ExtRight.Color),
-                                        color: '#000000'
-                                    }
-                                }, statusData.ExtRight.Text),
-                                React.createElement('span', { className: 'text-xs mt-1' }, 'Ext R')
-                            ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                                React.createElement('span', { 
-                                    className: 'badge w-full text-center',
-                                    style: { 
                                         backgroundColor: stripAlphaChannel(statusData.IntLeft.Color),
                                         color: '#000000'
                                     }
@@ -457,14 +433,6 @@ function CombinedDashboard() {
                             React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
                                 React.createElement('span', { className: `badge ${statusData.Strokes.Color} w-full text-center` }, statusData.Strokes.Text),
                                 React.createElement('span', { className: 'text-xs mt-1' }, 'Strokes')
-                            ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                                React.createElement('span', { className: `badge ${statusData.BytesSent.Color} w-full text-center` }, statusData.BytesSent.Text),
-                                React.createElement('span', { className: 'text-xs mt-1' }, 'Sent')
-                            ),
-                            React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
-                                React.createElement('span', { className: `badge ${statusData.BytesRecd.Color} w-full text-center` }, statusData.BytesRecd.Text),
-                                React.createElement('span', { className: 'text-xs mt-1' }, 'MB Rec')
                             ),
                             React.createElement('div', { className: 'flex-1 flex flex-col items-center' },
                                 React.createElement('span', { className: `badge ${statusData.CANStatus.Color} w-full text-center` }, statusData.CANStatus.Text),
@@ -636,20 +604,6 @@ function CombinedDashboard() {
 
                 // Flow Info
 
-                React.createElement('div', { className: 'card bg-base-200 shadow-xl mb-2 mt-2' },
-                    React.createElement('div', { className: 'card-body py-1 px-1.5' },
-                        React.createElement('h2', { className: 'card-title opacity-80' }, 'Flow Status'),
-
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
-                            createDetailCard('Flow Lmt', flowLimit, 'flow.png', 'base-content', null, 'L/min'),
-
-                            createDetailCard('Flow State', flowLimitState, 'flow.png', 'base-content', null)
-
-                        )
-
-                    )
-
-                )
             )
         );
     }

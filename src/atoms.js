@@ -39,13 +39,9 @@ export const ivcPressSensorAtom = atom({ PrimaryValue: 0, unit: 'mmHg' })
 
 
 // Status data atoms - legacy fields
-export const extLeftAtom = atom({ Text: '-', Color: 'badge-info' })
-export const extRightAtom = atom({ Text: '-', Color: 'badge-info' })
 export const intLeftAtom = atom({ Text: '-', Color: 'badge-info' })
 export const intRightAtom = atom({ Text: '-', Color: 'badge-info' })
 export const canStatusAtom = atom({ Text: '-', Color: 'badge-info' })
-export const bytesSentAtom = atom({ Text: '-', Color: 'badge-info' })
-export const bytesRecdAtom = atom({ Text: '-', Color: 'badge-info' })
 export const strokesAtom = atom({ Text: '-', Color: 'badge-info' })
 export const busLoadAtom = atom({ Text: '-', Color: 'badge-info' })
 
@@ -56,8 +52,6 @@ export const cpuLoadAtom = atom({ Text: '-', Color: 'badge-info' })
 export const accelerometerAtom = atom({ Text: '-', Color: 'badge-info' })
 
 // Additional system atoms
-export const flowLimitStateAtom = atom('')
-export const flowLimitAtom = atom('0')
 export const useMedicalSensorAtom = atom(false)
 export const lastUpdateAtom = atom(new Date().toLocaleString())
 
@@ -68,13 +62,9 @@ export const rightHeartAvailableAtom = atom(true)
 
 // Complete status data atom for backward compatibility
 export const statusDataAtom = atom({
-  ExtLeft: { Text: '-', Color: 'badge-info' },
-  ExtRight: { Text: '-', Color: 'badge-info' },
   IntLeft: { Text: '-', Color: 'badge-info' },
   IntRight: { Text: '-', Color: 'badge-info' },
   CANStatus: { Text: '-', Color: 'badge-info' },
-  BytesSent: { Text: '-', Color: 'badge-info' },
-  BytesRecd: { Text: '-', Color: 'badge-info' },
   Strokes: { Text: '-', Color: 'badge-info' },
   BusLoad: { Text: '-', Color: 'badge-info' },
   Temperature: { Text: '-', Color: 'badge-info' },
@@ -248,20 +238,6 @@ export function updateAtomsFromState(state, setAtom) {
     const status = state.StatusData;
     
     // Legacy status fields
-    if (status.ExtLeft) {
-      setAtom(extLeftAtom, {
-        Text: status.ExtLeft.Text ?? '-',
-        Color: status.ExtLeft.Color ?? 'badge-info'
-      });
-    }
-    
-    if (status.ExtRight) {
-      setAtom(extRightAtom, {
-        Text: status.ExtRight.Text ?? '-',
-        Color: status.ExtRight.Color ?? 'badge-info'
-      });
-    }
-    
     if (status.IntLeft) {
       setAtom(intLeftAtom, {
         Text: status.IntLeft.Text ?? '-',
@@ -280,20 +256,6 @@ export function updateAtomsFromState(state, setAtom) {
       setAtom(canStatusAtom, {
         Text: status.CANStatus.Text ?? '-',
         Color: status.CANStatus.Color ?? 'badge-info'
-      });
-    }
-    
-    if (status.BytesSent) {
-      setAtom(bytesSentAtom, {
-        Text: status.BytesSent.Text ?? '-',
-        Color: status.BytesSent.Color ?? 'badge-info'
-      });
-    }
-    
-    if (status.BytesRecd) {
-      setAtom(bytesRecdAtom, {
-        Text: status.BytesRecd.Text ?? '-',
-        Color: status.BytesRecd.Color ?? 'badge-info'
       });
     }
     
@@ -342,13 +304,9 @@ export function updateAtomsFromState(state, setAtom) {
     
     // Update the complete status data atom for backward compatibility
     setAtom(statusDataAtom, {
-      ExtLeft: status.ExtLeft ?? { Text: '-', Color: 'badge-info' },
-      ExtRight: status.ExtRight ?? { Text: '-', Color: 'badge-info' },
       IntLeft: status.IntLeft ?? { Text: '-', Color: 'badge-info' },
       IntRight: status.IntRight ?? { Text: '-', Color: 'badge-info' },
       CANStatus: status.CANStatus ?? { Text: '-', Color: 'badge-info' },
-      BytesSent: status.BytesSent ?? { Text: '-', Color: 'badge-info' },
-      BytesRecd: status.BytesRecd ?? { Text: '-', Color: 'badge-info' },
       Strokes: status.Strokes ?? { Text: '-', Color: 'badge-info' },
       BusLoad: status.BusLoad ?? { Text: '-', Color: 'badge-info' },
       Temperature: status.Temperature ?? { Text: '-', Color: 'badge-info' },
@@ -359,14 +317,6 @@ export function updateAtomsFromState(state, setAtom) {
   }
   
   // Additional system fields
-  if (state.FlowLimitState !== undefined && state.FlowLimitState !== null) {
-    setAtom(flowLimitStateAtom, state.FlowLimitState);
-  }
-  
-  if (state.FlowLimit !== undefined && state.FlowLimit !== null) {
-    setAtom(flowLimitAtom, state.FlowLimit);
-  }
-  
   if (state.UseMedicalSensor !== undefined && state.UseMedicalSensor !== null) {
     setAtom(useMedicalSensorAtom, state.UseMedicalSensor === true || state.UseMedicalSensor === 'true');
   }

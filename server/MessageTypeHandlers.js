@@ -53,7 +53,7 @@ class MotorCurrentHandler extends MessageTypeHandler {
     }
     
     // Calculate power: P = V * I
-    const power = voltage * current;
+    const power = voltage * current * 10.0;
     
     // Route to appropriate pump side
     if (pumpSide === 'Left') {
@@ -383,12 +383,6 @@ class StreamingPressureHandler extends MessageTypeHandler {
   addToChannelBuffer(state, channel, data) {
     const buffer = state.StreamingPressure[channel];
     
-    // DEBUG: Log when adding data to buffers
-    if (Math.random() < 0.001) { // Sample 0.1% of calls
-      const dataSize = Array.isArray(data) ? data.length : 1;
-      console.log(`[DEBUG] Adding ${dataSize} points to ${channel}, buffer size before: ${buffer.size()}, capacity: ${buffer.capacity}`);
-    }
-    
     // Add each data point to the circular buffer
     if (Array.isArray(data)) {
       data.forEach(point => {
@@ -521,6 +515,100 @@ class AccelerometerHandler extends MessageTypeHandler {
   }
 }
 
+/**
+ * Handler for AliveCounter messages
+ * Updates stroke count (beatCount) status
+ */
+class AliveCounterHandler extends MessageTypeHandler {
+  /**
+   * Handle AliveCounter message
+   * @param {Object} data - Message data field
+   * @param {Object} aggregator - State aggregator instance
+   */
+  handle(data, aggregator) {
+    const state = aggregator.state;
+    
+    // Extract beatCount from the message (lowercase 'b' as per telemetry spec)
+    const beatCount = data.beatCount || 0;
+    
+    // Update StatusData with stroke count
+    state.StatusData.Strokes = {
+      Text: beatCount.toString(),
+      Color: 'badge-info'
+    };
+  }
+}
+
+/**
+ * Handler for CanBusLoad messages (System messages)
+ * Updates CAN bus load percentage
+ */
+class CanBusLoadHandler extends MessageTypeHandler {
+  /**
+   * Handle CanBusLoad message
+   * @param {Object} data - Message data field
+   * @param {Object} aggregator - State aggregator instance
+   */
+  handle(data, aggregator) {
+    const state = aggregator.state;
+    
+    // Extract bus load percentage and text (lowercase field names)
+    const busLoadPercentage = data.busLoadPercentage || 0;
+    const busLoadText = data.busLoadText || `${busLoadPercentage}%`;
+    
+    // Determine color based on bus load percentage
+    // > 80% = error (red), > 60% = warning (yellow), otherwise success (green)
+    let color = 'badge-success';
+    if (busLoadPercentage > 80) {
+      color = 'badge-error';
+    } else if (busLoadPercentage > 60) {
+      color = 'badge-warning';
+    }
+    
+    // Update StatusData with bus load
+    state.StatusData.BusLoad = {
+      Text: busLoadText,
+      Color: color
+    };
+  }
+}
+
+/**
+ * Handler for CanStatus messages (System messages)
+ * Updates CAN status information
+ */
+class CanStatusHandler extends MessageTypeHandler {
+  /**
+   * Handle CanStatus message
+   * @param {Object} data - Message data field
+   * @param {Object} aggregator - State aggregator instance
+   */
+  handle(data, aggregator) {
+    const state = aggregator.state;
+    
+    // Extract connection status (camelCase field name)
+    const statusText = data.connectionStatus || 'Unknown';
+    
+    // Determine color based on status
+    let color = 'badge-success';
+    if (statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('fault')) {
+      color = 'badge-error';
+    } else if (statusText.toLowerCase().includes('warning')) {
+      color = 'badge-warning';
+    } else if (statusText.toLowerCase().includes('receiving') || statusText.toLowerCase().includes('ok')) {
+      color = 'badge-success';
+    } else {
+      color = 'badge-info';
+    }
+    
+    // Update StatusData with CAN status
+    state.StatusData.CANStatus = {
+      Text: statusText,
+      Color: color
+    };
+  }
+}
+
 module.exports = {
   MessageTypeHandler,
   MotorCurrentHandler,
@@ -533,5 +621,8 @@ module.exports = {
   TemperatureHandler,
   SupplyVoltageHandler,
   CPUDataHandler,
-  AccelerometerHandler
+  AccelerometerHandler,
+  AliveCounterHandler,
+  CanBusLoadHandler,
+  CanStatusHandler
 };

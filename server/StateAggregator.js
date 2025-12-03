@@ -15,7 +15,10 @@ const {
   TemperatureHandler,
   SupplyVoltageHandler,
   CPUDataHandler,
-  AccelerometerHandler
+  AccelerometerHandler,
+  AliveCounterHandler,
+  CanBusLoadHandler,
+  CanStatusHandler
 } = require('./MessageTypeHandlers');
 
 /**
@@ -86,8 +89,6 @@ class StateAggregator {
     this.lastTelemetryTime = Date.now();
     this.leftHeartLastUpdate = Date.now();
     this.rightHeartLastUpdate = Date.now();
-    this.cachedState = null;
-    this.cacheInvalidated = true;
   }
 
   /**
@@ -106,7 +107,10 @@ class StateAggregator {
       'Temperature': new TemperatureHandler(),
       'SupplyVoltage': new SupplyVoltageHandler(),
       'CPUData': new CPUDataHandler(),
-      'Accelerometer': new AccelerometerHandler()
+      'Accelerometer': new AccelerometerHandler(),
+      'AliveCounter': new AliveCounterHandler(),
+      'CanBusLoad': new CanBusLoadHandler(),
+      'CanStatus': new CanStatusHandler()
     };
   }
 
@@ -177,6 +181,26 @@ class StateAggregator {
    */
   createSystemStatus() {
     return {
+      IntLeft: {
+        Text: '-',
+        Color: 'badge-info'
+      },
+      IntRight: {
+        Text: '-',
+        Color: 'badge-info'
+      },
+      CANStatus: {
+        Text: '-',
+        Color: 'badge-info'
+      },
+      Strokes: {
+        Text: '-',
+        Color: 'badge-info'
+      },
+      BusLoad: {
+        Text: '-',
+        Color: 'badge-info'
+      },
       Temperature: {
         Text: '-',
         Color: 'badge-info'
@@ -197,19 +221,23 @@ class StateAggregator {
   }
 
   /**
+   * Set the SystemId for this aggregator
+   * Validates: Requirement 6.4
+   * @param {string} systemId - System identifier
+   */
+  setSystemId(systemId) {
+    if (systemId && systemId !== this.state.SystemId) {
+      this.state.SystemId = systemId;
+      console.log(`[StateAggregator] SystemId set to: ${systemId}`);
+    }
+  }
+
+  /**
    * Get current aggregated state
    * Validates: Requirements 9.1, 9.2
    * @returns {AggregatedState} Current state with availability indicators
    */
   getState() {
-    // Return cached state if nothing has changed
-    // This prevents creating new objects on every call
-    if (!this.cacheInvalidated && this.cachedState) {
-      // Update timestamp on cached state
-      this.cachedState.Timestamp = Date.now();
-      return this.cachedState;
-    }
-    
     const now = Date.now();
     const TELEMETRY_TIMEOUT = 30000; // 30 seconds
     const SIDE_TIMEOUT = 10000; // 10 seconds for individual pump side
@@ -221,29 +249,8 @@ class StateAggregator {
     const leftHeartAvailable = (now - this.leftHeartLastUpdate) < SIDE_TIMEOUT;
     const rightHeartAvailable = (now - this.rightHeartLastUpdate) < SIDE_TIMEOUT;
     
-    // Convert CircularBuffers to arrays for JSON serialization
-    const state = { ...this.state };
-    if (state.StreamingPressure) {
-      const CircularBuffer = require('./CircularBuffer');
-      state.StreamingPressure = { ...state.StreamingPressure };
-      
-      // Convert each channel's CircularBuffer to array
-      const channels = ['leftAtrial', 'rightAtrial', 'leftVentricular', 'rightVentricular', 'aortic', 'pulmonaryArterial'];
-      channels.forEach(channel => {
-        if (state.StreamingPressure[channel] instanceof CircularBuffer) {
-          const arr = state.StreamingPressure[channel].toArray();
-          
-          // DEBUG: Monitor buffer growth (sample 1% of calls)
-          if (Math.random() < 0.01) {
-            console.log(`[DEBUG] CircularBuffer ${channel}: ${arr.length} items, buffer capacity: ${state.StreamingPressure[channel].capacity}`);
-          }
-          
-          state.StreamingPressure[channel] = arr;
-        }
-      });
-    }
-    
-    state._telemetryStatus = {
+    // Attach telemetry status directly to live state
+    this.state._telemetryStatus = {
       noDataReceived,
       leftHeartAvailable,
       rightHeartAvailable,
@@ -251,10 +258,43 @@ class StateAggregator {
       leftHeartLastUpdate: this.leftHeartLastUpdate,
       rightHeartLastUpdate: this.rightHeartLastUpdate
     };
+
+    // Update timestamp on live state
+    this.state.Timestamp = now;
+
+    // IMPORTANT: Do NOT convert StreamingPressure CircularBuffers here.
+    // We keep this.state as the "authoritative" object with CircularBuffers.
+    // Conversion to plain arrays happens only at broadcast time.
+    return this.state;
+  }
+
+  /**
+   * Get serializable state for JSON transmission
+   * Converts CircularBuffers to arrays only at the moment of serialization
+   * This prevents memory leaks from caching large arrays
+   * @returns {Object} State ready for JSON.stringify()
+   */
+  getSerializableState() {
+    const state = this.getState();
     
-    // Cache the state
-    this.cachedState = state;
-    this.cacheInvalidated = false;
+    // Convert CircularBuffers to arrays for JSON serialization
+    if (state.StreamingPressure) {
+      const CircularBuffer = require('./CircularBuffer');
+      const serializable = {
+        ...state,
+        StreamingPressure: { ...state.StreamingPressure }
+      };
+      
+      // Convert each channel's CircularBuffer to array
+      const channels = ['leftAtrial', 'rightAtrial', 'leftVentricular', 'rightVentricular', 'aortic', 'pulmonaryArterial'];
+      channels.forEach(channel => {
+        if (serializable.StreamingPressure[channel] instanceof CircularBuffer) {
+          serializable.StreamingPressure[channel] = serializable.StreamingPressure[channel].toArray();
+        }
+      });
+      
+      return serializable;
+    }
     
     return state;
   }
@@ -312,9 +352,6 @@ class StateAggregator {
    * @param {Object} message - Parsed telemetry message
    */
   updateState(message) {
-    // Invalidate cache when state changes
-    this.cacheInvalidated = true;
-    
     // Update timestamp
     this.state.Timestamp = message.timestampUtc || Date.now();
     

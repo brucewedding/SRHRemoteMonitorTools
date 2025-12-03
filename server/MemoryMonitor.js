@@ -46,8 +46,7 @@ class MemoryMonitor {
       diagnostics
     };
 
-    // Requirement 3.1: Log current heap usage
-    this.logger.info(`Memory usage: ${heapUsedMB.toFixed(2)}MB / ${heapTotalMB.toFixed(2)}MB`);
+    // Requirement 3.1: Track current heap usage (logging removed)
 
     // Requirement 3.2: Log warning when exceeding 350MB
     if (heapUsedMB >= this.warningThresholdMB && heapUsedMB < this.criticalThresholdMB) {

@@ -40,6 +40,9 @@ const waitingClients = new Set();
 // Track state per SystemId for broadcast filtering (Requirement 10.2)
 const systemStates = new Map();
 
+// Track unique message types for debugging (log each type once)
+const seenMessageTypes = new Map();
+
 // Timeout configuration for broadcasting last known state (Requirement 6.3)
 const BROADCAST_TIMEOUT_MS = 5000; // 5 seconds without telemetry
 const BROADCAST_INTERVAL_MS = 100; // Broadcast every 100ms
@@ -95,18 +98,16 @@ const broadcastSystemsList = () => {
   };
   
   systemsListBroadcastCount++;
-  
-  // Log every 30 seconds to track activity
-  const now = Date.now();
-  if (now - lastSystemsListLog > 30000) {
-    fastify.log.info(`[DIAGNOSTIC] Systems list broadcast called ${systemsListBroadcastCount} times in last 30s`);
-    systemsListBroadcastCount = 0;
-    lastSystemsListLog = now;
-  }
-  
+
   // Send to all connected clients
   // Skip closed connections without retaining references (Requirement 5.4)
+
   fastify.websocketServer.clients.forEach(client => {
+    // Producers (devices) don't consume the UI stream
+    if (client.isDevice) {
+      return;
+    }
+
     if (client.readyState === 1) { // WebSocket.OPEN = 1
       client.send(JSON.stringify(message));
     }
@@ -214,14 +215,6 @@ const processMessageBuffer = () => {
   
   messageProcessCount++;
   
-  // Log every 30 seconds to track activity
-  const now = Date.now();
-  if (now - lastMessageProcessLog > 30000) {
-    fastify.log.info(`[DIAGNOSTIC] Processed ${messageProcessCount} message batches in last 30s, buffer size: ${messageBuffer.length}`);
-    messageProcessCount = 0;
-    lastMessageProcessLog = now;
-  }
-  
   try {
     // Sort messages by timestampUtc (Requirement 1.2)
     messageBuffer.sort((a, b) => a.timestampUtc - b.timestampUtc);
@@ -257,12 +250,15 @@ const MIN_BROADCAST_INTERVAL = 100; // Minimum 100ms between broadcasts per syst
  */
 const broadcastAggregatedState = () => {
   try {
+    // Get live state (still contains CircularBuffers)
+    const rawState = stateAggregator.getState();
+
     // Get SystemId first to check throttling per system
-    const systemId = stateAggregator.state.SystemId;
+    const systemId = rawState.SystemId;
     if (!systemId) {
       return; // No system ID, skip broadcast
     }
-    
+
     // Throttle broadcasts per system to prevent excessive updates
     const now = Date.now();
     const lastBroadcast = lastBroadcastTime.get(systemId) || 0;
@@ -270,63 +266,93 @@ const broadcastAggregatedState = () => {
       return; // Skip this broadcast, too soon since last one
     }
     lastBroadcastTime.set(systemId, now);
-    
+
     // Check memory usage for throttling (Requirements 7.1, 7.2)
     const heapUsageMB = process.memoryUsage().heapUsed / 1024 / 1024;
-    
+
     // Check if we should broadcast now based on throttling (Requirement 7.1)
     if (!broadcastThrottler.shouldBroadcastNow(heapUsageMB)) {
       return; // Skip this broadcast due to throttling
     }
-    
-    const state = stateAggregator.getState();
-    
+
+    // --------- Build SEND-ONLY snapshot with arrays ---------
+    const sendState = { ...rawState };
+
+    if (rawState.StreamingPressure) {
+      const sp = { ...rawState.StreamingPressure };
+
+      const channels = [
+        'leftAtrial',
+        'rightAtrial',
+        'leftVentricular',
+        'rightVentricular',
+        'aortic',
+        'pulmonaryArterial'
+      ];
+
+      channels.forEach(channel => {
+        const buf = rawState.StreamingPressure[channel];
+        if (buf && typeof buf.toArray === 'function') {
+          sp[channel] = buf.toArray(); // convert to plain array for JSON
+        }
+      });
+
+      sendState.StreamingPressure = sp;
+    }
+
     // Include timestamp in broadcast (Requirement 6.2)
-    state.Timestamp = now;
-    
-    // Preserve SystemId for client filtering (Requirement 6.4)
-    // SystemId is already part of the state structure
-    
-    // Store/update state per SystemId for filtering (Requirement 10.2)
-    // Only keep states for currently connected systems to prevent memory leak
-    if (state.SystemId && connectedSystems.has(state.SystemId)) {
-      systemStates.set(state.SystemId, state);
-    }
-    
-    const stateMessage = JSON.stringify(state);
-    
-    // DEBUG: Log state size periodically to detect unbounded growth
-    if (Math.random() < 0.01) { // Sample 1% of broadcasts
-      const stateSizeKB = (stateMessage.length / 1024).toFixed(1);
-      fastify.log.info(`[DEBUG] Serialized state size: ${stateSizeKB} KB`);
-      
-      // Also log StreamingPressure channel sizes if present
-      if (state.StreamingPressure) {
-        const channelSizes = {};
-        const channels = ['leftAtrial', 'rightAtrial', 'leftVentricular', 'rightVentricular', 'aortic', 'pulmonaryArterial'];
-        channels.forEach(channel => {
-          if (Array.isArray(state.StreamingPressure[channel])) {
-            channelSizes[channel] = state.StreamingPressure[channel].length;
-          } else if (state.StreamingPressure[channel]) {
-            channelSizes[channel] = 'not-array';
-          }
-        });
-        fastify.log.info(`[DEBUG] StreamingPressure channel sizes:`, channelSizes);
+    sendState.Timestamp = now;
+
+    // --------- Store TRIMMED state for last-known broadcasts ---------
+    if (systemId && connectedSystems.has(systemId)) {
+      // Keep a shallow copy without the heavy streaming arrays
+      const { StreamingPressure, ...stateWithoutStreaming } = rawState;
+
+      // Optional: keep tiny summary instead of full buffers
+      if (rawState.StreamingPressure) {
+        const { sampleRate, unit, lastUpdate } = rawState.StreamingPressure;
+        stateWithoutStreaming.StreamingPressure = { sampleRate, unit, lastUpdate };
       }
+
+      systemStates.set(systemId, stateWithoutStreaming);
     }
-    
+    const MAX_BUFFERED_BYTES = 5 * 1024 * 1024; // 5 MB per client
+
+    const stateMessage = JSON.stringify(sendState);
+
     // Send to all connected WebSocket clients (Requirement 6.1)
     // Filter broadcasts by SystemId for each client (Requirement 10.2)
     // Skip closed connections without retaining references (Requirement 5.4)
     if (fastify.websocketServer) {
       fastify.websocketServer.clients.forEach(client => {
+        // Producers (devices) don't consume the UI stream
+        if (client.isDevice) {
+          return;
+        }
+
         // Only process open connections (Requirement 5.4)
         if (client.readyState === 1) { // WebSocket.OPEN = 1
+          // Backpressure protection
+          if (client.bufferedAmount > MAX_BUFFERED_BYTES) {
+            fastify.log.warn({
+              bufferedAmount: client.bufferedAmount,
+              systemToWatch: client.systemToWatch
+            }, 'Terminating slow WebSocket client due to excessive bufferedAmount');
+            
+            try {
+              client.terminate(); // hard kill, no more queuing
+            } catch (err) {
+              fastify.log.error({ err }, 'Error terminating slow WebSocket client');
+            }
+
+            // Let 'close' handler clean up maps/sets
+            return;
+          }
           try {
             // Filter by SystemId if client is watching a specific system
             if (client.systemToWatch) {
               // Only send if state matches the system the client is watching
-              if (state.SystemId === client.systemToWatch) {
+              if (systemId === client.systemToWatch) {
                 client.send(stateMessage);
               }
             } else {
@@ -340,7 +366,7 @@ const broadcastAggregatedState = () => {
         // Closed connections (readyState !== 1) are skipped without storing references
       });
     }
-    
+
     // Record that broadcast occurred (Requirement 7.1)
     broadcastThrottler.recordBroadcast();
   } catch (error) {
@@ -370,13 +396,6 @@ const broadcastLastKnownState = () => {
       
       lastKnownStateBroadcastCount++;
       
-      // Log every 30 seconds to track activity
-      if (now - lastBroadcastLog > 30000) {
-        fastify.log.info(`[DIAGNOSTIC] Last known state broadcast called ${lastKnownStateBroadcastCount} times in last 30s, systemStates size: ${systemStates.size}, clients: ${fastify.websocketServer.clients.size}`);
-        lastKnownStateBroadcastCount = 0;
-        lastBroadcastLog = now;
-      }
-      
       // Broadcast all stored system states
       systemStates.forEach((state, systemId) => {
         // Check if any clients are watching this system before broadcasting
@@ -398,8 +417,30 @@ const broadcastLastKnownState = () => {
         // Filter broadcasts by SystemId (Requirement 10.2)
         // Skip closed connections without retaining references (Requirement 5.4)
         fastify.websocketServer.clients.forEach(client => {
+          // Producers (devices) don't consume the UI stream
+          if (client.isDevice) {
+            return;
+          }
+
           // Only process open connections (Requirement 5.4)
           if (client.readyState === 1) { // WebSocket.OPEN = 1
+            // Backpressure protection
+            const MAX_BUFFERED_BYTES = 5 * 1024 * 1024;
+            if (client.bufferedAmount > MAX_BUFFERED_BYTES) {
+              fastify.log.warn({
+                bufferedAmount: client.bufferedAmount,
+                systemToWatch: client.systemToWatch
+              }, 'Terminating slow WebSocket client due to excessive bufferedAmount');
+              
+              try {
+                client.terminate(); // hard kill, no more queuing
+              } catch (err) {
+                fastify.log.error({ err }, 'Error terminating slow WebSocket client');
+              }
+
+              // Let 'close' handler clean up maps/sets
+              return;
+            }
             try {
               // Only send if state matches the system the client is watching
               if (client.systemToWatch === systemId) {
@@ -552,6 +593,11 @@ fastify.register(async function (fastify) {
     
     // Skip closed connections without retaining references (Requirement 5.4)
     fastify.websocketServer.clients.forEach((client) => {
+      // Producers (devices) don't consume the UI stream
+      if (client.isDevice) {
+        return;
+      }
+
       if (client.readyState === 1) { // WebSocket.OPEN = 1
         client.send(JSON.stringify(connectionMessage));
       }
@@ -566,9 +612,8 @@ fastify.register(async function (fastify) {
 
         // Check if this is a telemetry message (has messageType, timestampUtc, source, data fields)
         // Validates: Requirements 1.1, 1.2, 1.5
-        if (message.messageType && message.timestampUtc !== undefined && message.source && message.data) {
-          fastify.log.debug({ messageType: message.messageType }, 'Received telemetry message');
-          
+        if (message.messageType && message.timestampUtc !== undefined && message.source && message.data) 
+        {
           // Process telemetry message through parser and aggregator
           processTelemetryMessage(rawData);
           return;
@@ -658,6 +703,11 @@ fastify.register(async function (fastify) {
           // Send to all clients, marking the message as "self" for the sender
           // Skip closed connections without retaining references (Requirement 5.4)
           fastify.websocketServer.clients.forEach((client) => {
+            // Producers (devices) don't consume the UI stream
+            if (client.isDevice) {
+              return;
+            }
+
             if (client.readyState === 1) {
               const broadcastMessage = {
                 type: 'deviceMessage',
@@ -688,6 +738,11 @@ fastify.register(async function (fastify) {
           // Send to ALL clients INCLUDING the sender
           // Skip closed connections without retaining references (Requirement 5.4)
           fastify.websocketServer.clients.forEach((client) => {
+            // Producers (devices) don't consume the UI stream
+            if (client.isDevice) {
+              return;
+            }
+
             if (client.readyState === 1) {
               client.send(broadcastString);
             }

@@ -25,7 +25,9 @@ class MessageParser {
     'PumpControl',
     'StrokewisePressure',
     'StreamingPressure',
-    'AutoPhysiologicalSettings'
+    'AutoPhysiologicalSettings',
+    'CanBusLoad',
+    'CanStatus'
   ];
 
   /**
@@ -92,9 +94,9 @@ class MessageParser {
       return false;
     }
 
-    // Validate source is either CAN or UDP
-    if (message.source !== 'CAN' && message.source !== 'UDP') {
-      console.warn(`Invalid message: source must be CAN or UDP, got ${message.source}`);
+    // Validate source is either CAN, UDP, or System
+    if (message.source !== 'CAN' && message.source !== 'UDP' && message.source !== 'System') {
+      console.warn(`Invalid message: source must be CAN, UDP, or System, got ${message.source}`);
       return false;
     }
 

@@ -1,0 +1,68 @@
+[0] {"level":30,"time":1764689505012,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505012,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: SupplyVoltage, Source: CAN"}
+[0] {"level":30,"time":1764689505012,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"SupplyVoltage\",\n  \"timestampUtc\": 1764689504937,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"meanSupplyVoltage\": 16.766,\n    \"minSupplyVoltage\": 20.492,\n    \"maxSupplyVoltage\": 18.629,\n    \"unit\": \"V\",\n    \"canId\": \"0x0C0\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505012,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505013,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505013,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: MotorCurrent, Source: CAN"}
+[0] {"level":30,"time":1764689505013,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"MotorCurrent\",\n  \"timestampUtc\": 1764689504980,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"combinedCurrent\": 0.119,\n    \"phaseACurrent\": 0.115,\n    \"phaseBCurrent\": 0.009,\n    \"phaseCCurrent\": 0.014,\n    \"unit\": \"A\",\n    \"canId\": \"0x048\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505013,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505016,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505017,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: AdditionalTemperatures, Source: CAN"}
+[0] {"level":30,"time":1764689505017,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"AdditionalTemperatures\",\n  \"timestampUtc\": 1764689504997,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"cpuTemperature\": 29.7,\n    \"pressureSensorTemperature\": 19.8,\n    \"unit\": \"°C\",\n    \"canId\": \"0x0C8\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505017,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505017,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505017,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: Accelerometer, Source: CAN"}
+[0] {"level":30,"time":1764689505018,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"Accelerometer\",\n  \"timestampUtc\": 1764689505003,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"xAxis\": 0.159,\n    \"yAxis\": 0.18,\n    \"zAxis\": 0.955,\n    \"unit\": \"g\",\n    \"canId\": \"0x058\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505018,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505021,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505021,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: CPUData, Source: CAN"}
+[0] {"level":30,"time":1764689505021,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"CPUData\",\n  \"timestampUtc\": 1764689505008,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"cpuLoad\": 21,\n    \"unit\": \"%\",\n    \"canId\": \"0x0CD\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505021,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505022,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505022,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: InstantaneousAtrialPressure, Source: CAN"}
+[0] {"level":30,"time":1764689505022,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"InstantaneousAtrialPressure\",\n  \"timestampUtc\": 1764689505015,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"averagePressure\": 12.11,\n    \"unit\": \"mmHg\",\n    \"canId\": \"0x044\",\n    \"pumpSide\": \"Right\"\n  }\n}"}
+[0] {"level":30,"time":1764689505022,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505083,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505083,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: ManualPhysiologicalSettings, Source: CAN"}
+[0] {"level":30,"time":1764689505083,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"ManualPhysiologicalSettings\",\n  \"timestampUtc\": 1764689505075,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"heartRate\": 100,\n    \"leftStrokeLength\": 20,\n    \"rightStrokeLength\": 19,\n    \"unit\": \"bpm/mm\",\n    \"canId\": \"0x08C\",\n    \"pumpSide\": \"All\"\n  }\n}"}
+[0] {"level":30,"time":1764689505083,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505779,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505779,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: Voltage, Source: CAN"}
+[0] {"level":30,"time":1764689505779,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"Voltage\",\n  \"timestampUtc\": 1764689505768,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"coreVoltage\": 1.101,\n    \"auxVoltage\": 3.691,\n    \"motorVoltage\": 4.406,\n    \"unit\": \"V\",\n    \"canId\": \"0x050\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505779,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505791,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505791,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: Temperature, Source: CAN"}
+[0] {"level":30,"time":1764689505791,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"Temperature\",\n  \"timestampUtc\": 1764689505778,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"temp1\": 25,\n    \"temp2\": 25,\n    \"temp3\": 25,\n    \"temp4\": 25,\n    \"unit\": \"°C\",\n    \"canId\": \"0x060\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689505791,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689505800,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689505800,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: CanBusLoad, Source: System"}
+[0] {"level":30,"time":1764689505800,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"CanBusLoad\",\n  \"timestampUtc\": 1764689505798,\n  \"source\": \"System\",\n  \"data\": {\n    \"busLoadPercentage\": 8,\n    \"busLoadText\": \"8.0%\",\n    \"unit\": \"%\"\n  }\n}"}
+[0] {"level":30,"time":1764689505800,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689506103,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689506103,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: MotorTuningPid, Source: CAN"}
+[0] {"level":30,"time":1764689506103,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"MotorTuningPid\",\n  \"timestampUtc\": 1764689506093,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"proportionalGain\": 0.16,\n    \"integralGain\": 0.002,\n    \"derivativeGain\": 0.01,\n    \"canId\": \"0x0D0\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689506103,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689506109,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689506109,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: MotorTuningFeedForward, Source: CAN"}
+[0] {"level":30,"time":1764689506109,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"MotorTuningFeedForward\",\n  \"timestampUtc\": 1764689506102,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"velocityFeedForward\": 0.0016,\n    \"accelerationFeedForward\": 0.0000425,\n    \"canId\": \"0x0D2\",\n    \"pumpSide\": \"Left\"\n  }\n}"}
+[0] {"level":30,"time":1764689506109,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689507851,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689507851,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: StrokewiseAtrialPressure, Source: CAN"}
+[0] {"level":30,"time":1764689507851,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"StrokewiseAtrialPressure\",\n  \"timestampUtc\": 1764689507843,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"averagePressure\": 12.21,\n    \"minPressure\": 6.1,\n    \"maxPressure\": 18.32,\n    \"unit\": \"mmHg\",\n    \"canId\": \"0x045\",\n    \"pumpSide\": \"Right\"\n  }\n}"}
+[0] {"level":30,"time":1764689507851,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689507855,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689507855,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: ActualStrokeLength, Source: CAN"}
+[0] {"level":30,"time":1764689507855,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"ActualStrokeLength\",\n  \"timestampUtc\": 1764689507849,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"strokeLength\": 18.94,\n    \"unit\": \"mm\",\n    \"canId\": \"0x0BB\",\n    \"pumpSide\": \"Right\"\n  }\n}"}
+[0] {"level":30,"time":1764689507855,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689507973,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689507974,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: AliveCounter, Source: CAN"}
+[0] {"level":30,"time":1764689507974,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"AliveCounter\",\n  \"timestampUtc\": 1764689507965,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"beatCount\": 443605,\n    \"canId\": \"0x010\",\n    \"pumpSide\": \"All\"\n  }\n}"}
+[0] {"level":30,"time":1764689507974,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689507978,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689507978,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: PumpControl, Source: CAN"}
+[0] {"level":30,"time":1764689507978,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"PumpControl\",\n  \"timestampUtc\": 1764689507970,\n  \"source\": \"CAN\",\n  \"data\": {\n    \"heartRate\": 100,\n    \"strokeLength\": 200,\n    \"unit\": \"bpm/mm\",\n    \"canId\": \"0x032\",\n    \"pumpSide\": \"All\"\n  }\n}"}
+[0] {"level":30,"time":1764689507978,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
+[0] {"level":30,"time":1764689508046,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"=== NEW TELEMETRY MESSAGE TYPE ==="}
+[0] {"level":30,"time":1764689508046,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"Type: StrokewisePressure, Source: UDP"}
+[0] {"level":30,"time":1764689508046,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"{\n  \"messageType\": \"StrokewisePressure\",\n  \"timestampUtc\": 1764689508040,\n  \"source\": \"UDP\",\n  \"data\": {\n    \"leftAtrial\": {\n      \"average\": 0.9980828241061639,\n      \"max\": 3.008346538990736,\n      \"min\": -0.8361530490219593,\n      \"unit\": \"mmHg\"\n    },\n    \"rightAtrial\": {\n      \"average\": 0,\n      \"max\": 2.2250738585072014e-308,\n      \"min\": 0,\n      \"unit\": \"mmHg\"\n    },\n    \"leftVentricular\": null,\n    \"rightVentricular\": null,\n    \"aortic\": {\n      \"average\": 0.022801995167837423,\n      \"max\": 0.5411915481090546,\n      \"min\": -0.561494380235672,\n      \"unit\": \"mmHg\"\n    },\n    \"pulmonaryArterial\": {\n      \"average\": -0.0723507529234185,\n      \"max\": 0.3825174644589424,\n      \"min\": -0.5793524906039238,\n      \"unit\": \"mmHg\"\n    },\n    \"dataType\": \"Strokewise\"\n  }\n}"}
+[0] {"level":30,"time":1764689508046,"pid":73496,"hostname":"LAPTOP-PU18EUMN","msg":"==================================="}
